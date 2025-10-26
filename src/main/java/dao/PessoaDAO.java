@@ -1,16 +1,20 @@
 package dao;
 
+// Usando o pacote 'conexãoBD' e a classe 'ConexaoSQL' do seu projeto
 import conexãoBD.ConexaoSQL;
 import conexãoBD.IConexao;
+import model.Dono;
 import model.Pessoa;
+import model.Veterinario; // Importa a classe Veterinario
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementação da interface IPessoaDAO para interagir com o banco de dados MySQL.
- * Esta classe contém a lógica SQL para as operações de CRUD da entidade Pessoa.
+ * Implementação do DAO para Pessoa (Versão Atualizada).
+ * Salva a Pessoa e sua especialização (Dono ou Veterinario).
+ * Deleta Pessoa usando ON DELETE CASCADE.
  */
 public class PessoaDAO implements IPessoaDAO {
 
@@ -23,6 +27,8 @@ public class PessoaDAO implements IPessoaDAO {
     @Override
     public Pessoa salvar(Pessoa pessoa) {
         String sqlPessoa = "INSERT INTO Pessoa (nome, cpf, email) VALUES (?, ?, ?)";
+        String sqlDono = "INSERT INTO Dono (id_pessoa) VALUES (?)";
+        String sqlVeterinario = "INSERT INTO Veterinario (id_pessoa, CRMV) VALUES (?, ?)";
         String sqlTelefone = "INSERT INTO Pessoa_Telefone (id_pessoa, telefone) VALUES (?, ?)";
         Connection conexao = null;
 
@@ -30,7 +36,7 @@ public class PessoaDAO implements IPessoaDAO {
             conexao = conexaoBD.getConexao();
             conexao.setAutoCommit(false); // Controlar transação manualmente
 
-            // Inserir a Pessoa e obter o ID gerado
+            // --- Passo 1: Inserir a Pessoa e obter o ID gerado ---
             try (PreparedStatement stmtPessoa = conexao.prepareStatement(sqlPessoa, Statement.RETURN_GENERATED_KEYS)) {
                 stmtPessoa.setString(1, pessoa.getNome());
                 stmtPessoa.setString(2, pessoa.getCpf());
@@ -46,7 +52,26 @@ public class PessoaDAO implements IPessoaDAO {
                 }
             }
 
-            // Inserir os telefones associados
+            // --- Passo 2: Inserir na tabela de especialização correta ---
+            if (pessoa instanceof Veterinario) {
+                // Se o objeto é um Veterinario, salva na tabela Veterinario
+                try (PreparedStatement stmtVet = conexao.prepareStatement(sqlVeterinario)) {
+                    stmtVet.setInt(1, pessoa.getIdPessoa());
+                    stmtVet.setString(2, ((Veterinario) pessoa).getCrmv());
+                    stmtVet.executeUpdate();
+                    System.out.println("Registro de Veterinario salvo!");
+                }
+            } else {
+                // Se for um Dono ou uma Pessoa genérica, salva na tabela Dono
+                // (Mantém a lógica que fez nosso teste passar)
+                try (PreparedStatement stmtDono = conexao.prepareStatement(sqlDono)) {
+                    stmtDono.setInt(1, pessoa.getIdPessoa());
+                    stmtDono.executeUpdate();
+                    System.out.println("Registro de Dono salvo!");
+                }
+            }
+
+            // --- Passo 3: Inserir os telefones associados ---
             if (pessoa.getTelefones() != null && !pessoa.getTelefones().isEmpty()) {
                 try (PreparedStatement stmtTelefone = conexao.prepareStatement(sqlTelefone)) {
                     for (String telefone : pessoa.getTelefones()) {
@@ -59,13 +84,14 @@ public class PessoaDAO implements IPessoaDAO {
             }
 
             conexao.commit(); // Efetivar a transação
-            System.out.println("Pessoa salva com sucesso!");
+            System.out.println("Pessoa e especialização salvos com sucesso!");
 
         } catch (SQLException e) {
-            System.err.println("Erro ao salvar pessoa: " + e.getMessage());
+            System.err.println("Erro ao salvar pessoa/especialização: " + e.getMessage());
             if (conexao != null) {
                 try {
                     conexao.rollback(); // Reverter em caso de erro
+                    System.err.println("Transação revertida.");
                 } catch (SQLException ex) {
                     System.err.println("Erro ao reverter a transação: " + ex.getMessage());
                 }
@@ -86,7 +112,9 @@ public class PessoaDAO implements IPessoaDAO {
 
     @Override
     public boolean atualizar(Pessoa pessoa) {
+        // Atualiza os dados da Pessoa
         String sql = "UPDATE Pessoa SET nome = ?, cpf = ?, email = ? WHERE id_pessoa = ?";
+        // TODO: Adicionar lógica para atualizar tabelas filhas (ex: CRMV do Veterinario)
         try (Connection conexao = conexaoBD.getConexao();
              PreparedStatement stmt = conexao.prepareStatement(sql)) {
 
@@ -96,8 +124,6 @@ public class PessoaDAO implements IPessoaDAO {
             stmt.setInt(4, pessoa.getIdPessoa());
 
             int affectedRows = stmt.executeUpdate();
-            // Lógica para atualizar telefones seria mais complexa (deletar os antigos e inserir os novos)
-            // Por simplicidade, vamos focar nos dados da pessoa por enquanto.
             return affectedRows > 0;
         } catch (SQLException e) {
             System.err.println("Erro ao atualizar pessoa: " + e.getMessage());
@@ -109,55 +135,36 @@ public class PessoaDAO implements IPessoaDAO {
 
     @Override
     public boolean deletar(int id) {
-        // É preciso deletar os telefones primeiro devido à restrição de chave estrangeira
-        String sqlTelefone = "DELETE FROM Pessoa_Telefone WHERE id_pessoa = ?";
+        // MÉTODO SIMPLIFICADO: Graças ao "ON DELETE CASCADE" no nosso script SQL,
+        // só precisamos deletar da tabela Pessoa. O banco de dados
+        // cuidará de deletar os registros em Dono, Veterinario, Pessoa_Telefone e Possui.
+
         String sqlPessoa = "DELETE FROM Pessoa WHERE id_pessoa = ?";
-        Connection conexao = null;
-        try {
-            conexao = conexaoBD.getConexao();
-            conexao.setAutoCommit(false); // Transação
 
-            // Deletar telefones
-            try (PreparedStatement stmtTelefone = conexao.prepareStatement(sqlTelefone)) {
-                stmtTelefone.setInt(1, id);
-                stmtTelefone.executeUpdate();
+        try (Connection conexao = conexaoBD.getConexao();
+             PreparedStatement stmtPessoa = conexao.prepareStatement(sqlPessoa)) {
+
+            stmtPessoa.setInt(1, id);
+            int affectedRows = stmtPessoa.executeUpdate();
+
+            if (affectedRows == 0) {
+                System.err.println("Deleção falhou, nenhuma pessoa encontrada com o ID: " + id);
             }
 
-            // Deletar pessoa
-            try (PreparedStatement stmtPessoa = conexao.prepareStatement(sqlPessoa)) {
-                stmtPessoa.setInt(1, id);
-                int affectedRows = stmtPessoa.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Deleção falhou, nenhuma linha afetada.");
-                }
-            }
+            return affectedRows > 0;
 
-            conexao.commit();
-            return true;
         } catch (SQLException e) {
             System.err.println("Erro ao deletar pessoa: " + e.getMessage());
-            if (conexao != null) {
-                try {
-                    conexao.rollback();
-                } catch (SQLException ex) {
-                    System.err.println("Erro ao reverter transação: " + ex.getMessage());
-                }
-            }
             return false;
         } finally {
-            if (conexao != null) {
-                try {
-                    conexao.setAutoCommit(true);
-                } catch (SQLException e) {
-                    System.err.println("Erro ao restaurar auto-commit: " + e.getMessage());
-                }
-            }
             conexaoBD.closeConexao();
         }
     }
 
     @Override
     public Pessoa buscarPorId(int id) {
+        // Esta busca ainda retorna uma Pessoa genérica.
+        // TODO: Implementar lógica para checar se é Dono ou Veterinario e retornar o tipo correto.
         String sql = "SELECT p.id_pessoa, p.nome, p.cpf, p.email, pt.telefone " +
                 "FROM Pessoa p " +
                 "LEFT JOIN Pessoa_Telefone pt ON p.id_pessoa = pt.id_pessoa " +
@@ -171,7 +178,7 @@ public class PessoaDAO implements IPessoaDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     if (pessoa == null) {
-                        pessoa = new Pessoa();
+                        pessoa = new Pessoa(); // Por enquanto, retorna Pessoa genérica
                         pessoa.setIdPessoa(rs.getInt("id_pessoa"));
                         pessoa.setNome(rs.getString("nome"));
                         pessoa.setCpf(rs.getString("cpf"));
@@ -193,8 +200,6 @@ public class PessoaDAO implements IPessoaDAO {
 
     @Override
     public List<Pessoa> listarTodos() {
-        // Esta implementação é mais complexa pois precisa agrupar os telefones por pessoa.
-        // Faremos uma versão simplificada que não carrega os telefones.
         String sql = "SELECT id_pessoa, nome, cpf, email FROM Pessoa";
         List<Pessoa> pessoas = new ArrayList<>();
 
@@ -208,7 +213,6 @@ public class PessoaDAO implements IPessoaDAO {
                 pessoa.setNome(rs.getString("nome"));
                 pessoa.setCpf(rs.getString("cpf"));
                 pessoa.setEmail(rs.getString("email"));
-                // Para carregar os telefones, seria necessário outra consulta para cada pessoa.
                 pessoas.add(pessoa);
             }
         } catch (SQLException e) {

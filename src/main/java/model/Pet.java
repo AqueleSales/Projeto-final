@@ -4,6 +4,9 @@ import java.time.LocalDate;
 
 /**
  * Classe de Modelo (POJO) que representa a entidade Pet.
+ * É uma superclasse para AnimalDeServico.
+ * Esta versão usa java.time.LocalDate, que é o tipo de data correto
+ * para ser usado com o PetDAO.
  */
 public class Pet {
 
@@ -11,12 +14,14 @@ public class Pet {
     private String nome;
     private String especie;
     private String raca;
-    private LocalDate dataNasc;
-    private int idDono; // Chave estrangeira para Dono
+    private LocalDate dataNascimento; // Usando LocalDate para datas
+    private int idDono; // Este campo será usado APENAS para transporte, não para o banco
 
-    // Construtores, Getters e Setters
+    // Construtores
     public Pet() {
     }
+
+    // Getters e Setters (Corretos)
 
     public int getIdPet() {
         return idPet;
@@ -50,14 +55,20 @@ public class Pet {
         this.raca = raca;
     }
 
-    public LocalDate getDataNasc() {
-        return dataNasc;
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
     }
 
-    public void setDataNasc(LocalDate dataNasc) {
-        this.dataNasc = dataNasc;
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
     }
 
+    /**
+     * Este campo é usado apenas para transferir o ID do dono
+     * do Main para o PetDAO, para que o PetDAO saiba
+     * qual ID usar na tabela 'Possui'.
+     * @return o ID do dono.
+     */
     public int getIdDono() {
         return idDono;
     }
@@ -73,8 +84,9 @@ public class Pet {
                 ", nome='" + nome + '\'' +
                 ", especie='" + especie + '\'' +
                 ", raca='" + raca + '\'' +
-                ", dataNasc=" + dataNasc +
-                ", idDono=" + idDono +
+                ", dataNascimento=" + dataNascimento +
+                ", idDonoTransporte=" + idDono + // Mostra o ID do dono associado
                 '}';
     }
 }
+

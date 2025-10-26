@@ -1,19 +1,19 @@
 package model;
 
 /**
- * Classe de Modelo que representa a entidade Veterinario.
- * Herda de Pessoa e adiciona o atributo específico CRMV.
+ * Classe de Modelo (POJO) que representa a entidade Veterinario.
+ * Esta é uma subclasse de Pessoa e adiciona o campo CRMV.
  */
 public class Veterinario extends Pessoa {
 
     private String crmv;
 
-    // Construtor padrão
+    // Construtores
     public Veterinario() {
-        super();
+        super(); // Chama o construtor da classe Pessoa
     }
 
-    // Getters e Setters
+    // Getters e Setters específicos do Veterinario
     public String getCrmv() {
         return crmv;
     }
@@ -24,9 +24,11 @@ public class Veterinario extends Pessoa {
 
     @Override
     public String toString() {
+        // Usa o toString() da Pessoa e adiciona o CRMV
         return "Veterinario{" +
                 "pessoa=" + super.toString() +
                 ", crmv='" + crmv + '\'' +
                 '}';
     }
 }
+
