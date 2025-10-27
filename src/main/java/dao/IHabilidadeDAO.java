@@ -5,41 +5,42 @@ import java.util.List;
 
 /**
  * Interface que define o contrato para as operações de persistência
- * da entidade Habilidade (CRUD).
+ * da entidade Habilidade.
  */
 public interface IHabilidadeDAO {
 
     /**
-     * Salva um novo objeto Habilidade no banco de dados.
+     * Salva uma nova Habilidade no banco de dados.
      * @param habilidade O objeto Habilidade a ser salvo.
-     * @return O objeto Habilidade salvo, com o ID gerado.
+     * @return O Habilidade salvo com o ID gerado.
      */
     Habilidade salvar(Habilidade habilidade);
 
     /**
-     * Atualiza um objeto Habilidade existente no banco de dados.
+     * Atualiza uma Habilidade existente no banco de dados.
      * @param habilidade O objeto Habilidade com os dados atualizados.
-     * @return true se a atualização foi bem-sucedida, false caso contrário.
+     * @return true se a atualização foi bem-sucedida.
      */
     boolean atualizar(Habilidade habilidade);
 
     /**
-     * Deleta uma Habilidade do banco de dados com base no seu ID.
+     * Deleta uma Habilidade do banco pelo ID.
      * @param id O ID da Habilidade a ser deletada.
-     * @return true se a deleção foi bem-sucedida, false caso contrário.
+     * @return true se a deleção foi bem-sucedida.
      */
     boolean deletar(int id);
 
     /**
-     * Busca uma Habilidade no banco de dados pelo seu ID.
-     * @param id O ID da Habilidade a ser buscada.
-     * @return O objeto Habilidade encontrado, ou null se não for encontrado.
+     * Busca uma Habilidade pelo seu ID.
+     * @param id O ID da Habilidade.
+     * @return O Habilidade encontrado, ou null.
      */
     Habilidade buscarPorId(int id);
 
     /**
-     * Retorna uma lista com todas as Habilidades cadastradas no banco de dados.
-     * @return Uma lista de objetos Habilidade.
+     * Lista todas as Habilidades cadastradas.
+     * @return Uma lista de Habilidade.
      */
     List<Habilidade> listarTodos();
 }
+

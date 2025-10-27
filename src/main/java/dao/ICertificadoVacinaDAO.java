@@ -10,31 +10,31 @@ import java.util.List;
 public interface ICertificadoVacinaDAO {
 
     /**
-     * Salva um novo objeto CertificadoVacina no banco de dados.
+     * Salva um novo Certificado de Vacina no banco de dados.
      * @param certificado O objeto CertificadoVacina a ser salvo.
-     * @return O objeto CertificadoVacina salvo, com o ID gerado.
+     * @return O CertificadoVacina salvo com o ID gerado.
      */
     CertificadoVacina salvar(CertificadoVacina certificado);
 
     /**
-     * Deleta um CertificadoVacina do banco de dados com base no seu ID.
-     * @param id O ID do CertificadoVacina a ser deletado.
-     * @return true se a deleção foi bem-sucedida, false caso contrário.
+     * Deleta um Certificado de Vacina do banco pelo ID.
+     * @param id O ID do Certificado a ser deletado.
+     * @return true se a deleção foi bem-sucedida.
      */
     boolean deletar(int id);
 
     /**
-     * Busca um CertificadoVacina no banco de dados pelo seu ID.
-     * @param id O ID do CertificadoVacina a ser buscado.
-     * @return O objeto CertificadoVacina encontrado, ou null se não for encontrado.
+     * Busca um Certificado de Vacina pelo seu ID.
+     * @param id O ID do Certificado.
+     * @return O CertificadoVacina encontrado, ou null.
      */
     CertificadoVacina buscarPorId(int id);
 
     /**
-     * Retorna uma lista com todos os Certificados de Vacina de um pet específico.
-     * Este é o método principal para exibir o histórico de vacinação.
+     * Lista todos os Certificados de Vacina de um pet específico.
      * @param idPet O ID do Pet.
-     * @return Uma lista de objetos CertificadoVacina.
+     * @return Uma lista de CertificadoVacina.
      */
     List<CertificadoVacina> listarPorPet(int idPet);
 }
+

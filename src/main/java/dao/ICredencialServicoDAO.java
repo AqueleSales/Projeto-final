@@ -4,37 +4,36 @@ import model.CredencialServico;
 
 /**
  * Interface que define o contrato para as operações de persistência
- * da entidade CredencialServico e sua relação M:N com Habilidade.
+ * da entidade CredencialServico.
  */
 public interface ICredencialServicoDAO {
 
     /**
-     * Salva uma nova CredencialServico no banco de dados,
-     * incluindo suas associações com Habilidades (relação M:N).
-     *
+     * Salva uma nova credencial e suas habilidades (relação M:N).
      * @param credencial O objeto CredencialServico a ser salvo.
-     * @return O objeto CredencialServico salvo, com o ID gerado.
+     * @return A credencial salva com o ID.
      */
     CredencialServico salvar(CredencialServico credencial);
 
     /**
-     * Busca uma CredencialServico pelo ID do Animal de Serviço.
-     * A relação é 1:1, então cada animal só tem uma credencial.
-     *
-     * @param idAnimalServico O ID do Animal de Serviço.
-     * @return A CredencialServico encontrada, ou null.
+     * Busca uma credencial pelo ID do animal de serviço.
+     * @param idAnimal O ID do AnimalDeServico.
+     * @return A credencial encontrada, já com a lista de habilidades.
      */
-    CredencialServico buscarPorIdAnimal(int idAnimalServico);
+    CredencialServico buscarPorAnimalId(int idAnimal);
 
     /**
-     * Deleta uma CredencialServico do banco de dados.
-     * A deleção em cascata (configurada no BD) deve remover
-     * as associações em Credencial_Habilidade.
-     *
-     * @param idCredencial O ID da credencial a ser deletada.
-     * @return true se a deleção foi bem-sucedida, false caso contrário.
+     * Busca uma credencial pelo seu próprio ID.
+     * @param id O ID da Credencial.
+     * @return A credencial encontrada, já com a lista de habilidades.
      */
-    boolean deletar(int idCredencial);
+    CredencialServico buscarPorId(int id);
 
-    // Métodos de atualização e listagem podem ser adicionados conforme necessidade.
+    /**
+     * Deleta uma credencial e suas relações M:N.
+     * @param id O ID da credencial a deletar.
+     * @return true se a deleção foi bem-sucedida.
+     */
+    boolean deletar(int id);
 }
+

@@ -1,294 +1,173 @@
 package dao;
 
-import conexãoBD.ConexaoSQL;
-import conexãoBD.IConexao;
 import model.AnimalDeServico;
 import model.Pet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 /**
- * Implementação da interface IPetDAO para interagir com o banco de dados MySQL.
- * Esta classe contém a lógica SQL para as operações de CRUD da entidade Pet
- * e sua especialização AnimalDeServico.
+ * Implementação do DAO para Pet, agora usando Spring Boot e JdbcTemplate.
  */
+@Repository
 public class PetDAO implements IPetDAO {
 
-    private final IConexao conexaoBD;
-    private static final String SQL_SELECT_PETS =
-            "SELECT p.*, ads.numero_registro_oficial, ads.status " +
-                    "FROM Pet p " +
-                    "LEFT JOIN Animal_de_Servico ads ON p.id_pet = ads.id_pet";
+    private final JdbcTemplate jdbcTemplate;
 
-    public PetDAO() {
-        this.conexaoBD = new ConexaoSQL();
+    @Autowired
+    public PetDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
+    @Transactional
     public Pet salvar(Pet pet) {
         String sqlPet = "INSERT INTO Pet (nome, especie, raca, data_nasc) VALUES (?, ?, ?, ?)";
-        String sqlPossui = "INSERT INTO Possui (id_dono, id_pet) VALUES (?, ?)";
-        String sqlAnimalServico = "INSERT INTO Animal_de_Servico (id_pet, numero_registro_oficial, status) VALUES (?, ?, ?)";
-        Connection conexao = null;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        try {
-            conexao = conexaoBD.getConexao();
-            conexao.setAutoCommit(false); // Inicia a transação
+        // 1. Salvar o Pet
+        jdbcTemplate.update(connection -> {
+            PreparedStatement stmt = connection.prepareStatement(sqlPet, Statement.RETURN_GENERATED_KEYS);
+            stmt.setString(1, pet.getNome());
+            stmt.setString(2, pet.getEspecie());
+            stmt.setString(3, pet.getRaca());
+            stmt.setDate(4, java.sql.Date.valueOf(pet.getDataNascimento()));
+            return stmt;
+        }, keyHolder);
 
-            // --- Passo 1: Salvar o Pet ---
-            int idPetGerado;
-            try (PreparedStatement stmtPet = conexao.prepareStatement(sqlPet, Statement.RETURN_GENERATED_KEYS)) {
-                stmtPet.setString(1, pet.getNome());
-                stmtPet.setString(2, pet.getEspecie());
-                stmtPet.setString(3, pet.getRaca());
-                stmtPet.setDate(4, Date.valueOf(pet.getDataNascimento()));
-                stmtPet.executeUpdate();
+        int idPet = keyHolder.getKey().intValue();
+        pet.setIdPet(idPet);
 
-                try (ResultSet generatedKeys = stmtPet.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        idPetGerado = generatedKeys.getInt(1);
-                        pet.setIdPet(idPetGerado);
-                    } else {
-                        throw new SQLException("Falha ao obter o ID do pet.");
-                    }
-                }
-            }
-
-            // --- Passo 2: Salvar a ligação na tabela Possui ---
-            if (pet.getIdDonoTransporte() > 0) {
-                try (PreparedStatement stmtPossui = conexao.prepareStatement(sqlPossui)) {
-                    stmtPossui.setInt(1, pet.getIdDonoTransporte());
-                    stmtPossui.setInt(2, idPetGerado);
-                    stmtPossui.executeUpdate();
-                }
-            } else {
-                throw new SQLException("ID do Dono é inválido, não é possível salvar a relação.");
-            }
-
-            // --- Passo 3: Salvar a especialização (se for Animal de Serviço) ---
-            if (pet instanceof AnimalDeServico) {
-                System.out.println("Salvando dados do Animal de Serviço...");
-                AnimalDeServico animal = (AnimalDeServico) pet;
-                try (PreparedStatement stmtAnimalServico = conexao.prepareStatement(sqlAnimalServico)) {
-                    stmtAnimalServico.setInt(1, idPetGerado);
-                    stmtAnimalServico.setString(2, animal.getNumeroRegistroOficial());
-                    stmtAnimalServico.setString(3, animal.getStatus());
-                    stmtAnimalServico.executeUpdate();
-                }
-            }
-
-            conexao.commit(); // Efetiva a transação
-            System.out.println("Pet e relações salvas com sucesso!");
-            return pet;
-
-        } catch (SQLException e) {
-            System.err.println("Erro ao salvar pet (transação): " + e.getMessage());
-            if (conexao != null) {
-                try {
-                    conexao.rollback();
-                    System.err.println("Transação revertida.");
-                } catch (SQLException ex) {
-                    System.err.println("Erro ao reverter a transação: " + ex.getMessage());
-                }
-            }
-            return null;
-        } finally {
-            if (conexao != null) {
-                try {
-                    conexao.setAutoCommit(true);
-                } catch (SQLException e) {
-                    System.err.println("Erro ao restaurar auto-commit: " + e.getMessage());
-                }
-            }
-            conexaoBD.closeConexao();
+        // 2. Salvar a ligação na tabela Possui
+        // Usamos o campo 'idDonoTransporte' que definimos no modelo
+        if (pet.getIdDonoTransporte() > 0) {
+            String sqlPossui = "INSERT INTO Possui (id_dono, id_pet) VALUES (?, ?)";
+            jdbcTemplate.update(sqlPossui, pet.getIdDonoTransporte(), idPet);
+        } else {
+            // Se não foi passado um Dono, é um erro na lógica de negócio
+            throw new RuntimeException("ID do Dono é inválido, não é possível salvar a relação.");
         }
+
+        // 3. Salvar Especialização (AnimalDeServico)
+        if (pet instanceof AnimalDeServico) {
+            System.out.println("Salvando dados do Animal de Serviço...");
+            String sqlAnimalServico = "INSERT INTO Animal_de_Servico (id_pet, numero_registro_oficial, status) VALUES (?, ?, ?)";
+            AnimalDeServico as = (AnimalDeServico) pet;
+            jdbcTemplate.update(sqlAnimalServico, idPet, as.getNumeroRegistroOficial(), as.getStatus());
+        }
+
+        System.out.println("Pet e relações salvas com sucesso!");
+        return pet;
     }
 
     @Override
     public boolean atualizar(Pet pet) {
-        String sqlPet = "UPDATE Pet SET nome = ?, especie = ?, raca = ?, data_nasc = ? WHERE id_pet = ?";
-        String sqlAnimalServico = "UPDATE Animal_de_Servico SET numero_registro_oficial = ?, status = ? WHERE id_pet = ?";
-        Connection conexao = null;
-        try {
-            conexao = conexaoBD.getConexao();
-            conexao.setAutoCommit(false); // Transação
+        String sql = "UPDATE Pet SET nome = ?, especie = ?, raca = ?, data_nasc = ? WHERE id_pet = ?";
 
-            // Atualiza Pet
-            try (PreparedStatement stmtPet = conexao.prepareStatement(sqlPet)) {
-                stmtPet.setString(1, pet.getNome());
-                stmtPet.setString(2, pet.getEspecie());
-                stmtPet.setString(3, pet.getRaca());
-                stmtPet.setDate(4, Date.valueOf(pet.getDataNascimento()));
-                stmtPet.setInt(5, pet.getIdPet());
-                stmtPet.executeUpdate();
-            }
+        int affectedRows = jdbcTemplate.update(sql,
+                pet.getNome(),
+                pet.getEspecie(),
+                pet.getRaca(),
+                pet.getDataNascimento(),
+                pet.getIdPet()
+        );
 
-            // Atualiza AnimalDeServico (se for)
-            if (pet instanceof AnimalDeServico) {
-                AnimalDeServico animal = (AnimalDeServico) pet;
-                try (PreparedStatement stmtAnimalServico = conexao.prepareStatement(sqlAnimalServico)) {
-                    stmtAnimalServico.setString(1, animal.getNumeroRegistroOficial());
-                    stmtAnimalServico.setString(2, animal.getStatus());
-                    stmtAnimalServico.setInt(3, animal.getIdPet());
-                    stmtAnimalServico.executeUpdate();
-                }
-            }
+        // TODO: Adicionar lógica para atualizar AnimalDeServico
 
-            // Nota: a relação Possui (id_dono) não está sendo atualizada por simplicidade.
-
-            conexao.commit();
-            System.out.println("Pet atualizado com sucesso!");
-            return true;
-        } catch (SQLException e) {
-            System.err.println("Erro ao atualizar pet: " + e.getMessage());
-            if (conexao != null) {
-                try {
-                    conexao.rollback();
-                } catch (SQLException ex) {
-                    System.err.println("Erro ao reverter transação: " + ex.getMessage());
-                }
-            }
-            return false;
-        } finally {
-            if (conexao != null) {
-                try {
-                    conexao.setAutoCommit(true);
-                } catch (SQLException e) {
-                    System.err.println("Erro ao restaurar auto-commit: " + e.getMessage());
-                }
-            }
-            conexaoBD.closeConexao();
-        }
+        return affectedRows > 0;
     }
 
     @Override
     public boolean deletar(int id) {
-        // Graças ao "ON DELETE CASCADE" no banco de dados:
-        // 1. Deletar um Pet irá deletar o registro em Animal_de_Servico.
-        // 2. Deletar um Pet irá deletar o registro em Possui.
-        // 3. Deletar um Pet irá deletar os registros em CertificadoVacina.
-        // 4. Deletar um AnimalDeServico (id_pet) irá deletar os registros em Credencial_Servico
-        //    (e este irá deletar Credencial_Habilidade).
-
-        // Portanto, SÓ precisamos deletar da tabela Pet.
+        // Graças ao 'ON DELETE CASCADE', só precisamos deletar da tabela Pet.
         String sql = "DELETE FROM Pet WHERE id_pet = ?";
+        int affectedRows = jdbcTemplate.update(sql, id);
+        return affectedRows > 0;
+    }
 
-        try (Connection conexao = conexaoBD.getConexao();
-             PreparedStatement stmt = conexao.prepareStatement(sql)) {
+    /**
+     * Esta classe interna (RowMapper) ensina o Spring a converter
+     * uma linha do ResultSet (do banco) em um objeto Pet ou AnimalDeServico.
+     */
+    private static final class PetRowMapper implements RowMapper<Pet> {
+        @Override
+        public Pet mapRow(ResultSet rs, int rowNum) throws SQLException {
+            // Primeiro, verifica se este Pet é um Animal de Serviço
+            String sqlCheckServico = "SELECT numero_registro_oficial, status FROM Animal_de_Servico WHERE id_pet = ?";
 
-            stmt.setInt(1, id);
-            int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
+            Pet pet;
+            try (PreparedStatement stmtCheck = rs.getStatement().getConnection().prepareStatement(sqlCheckServico)) {
+                stmtCheck.setInt(1, rs.getInt("p.id_pet"));
+                try (ResultSet rsServico = stmtCheck.executeQuery()) {
+                    if (rsServico.next()) {
+                        // É um Animal de Serviço
+                        AnimalDeServico as = new AnimalDeServico();
+                        as.setNumeroRegistroOficial(rsServico.getString("numero_registro_oficial"));
+                        as.setStatus(rsServico.getString("status"));
+                        pet = as;
+                    } else {
+                        // É um Pet Comum
+                        pet = new Pet();
+                    }
+                }
+            }
 
-        } catch (SQLException e) {
-            System.err.println("Erro ao deletar pet: " + e.getMessage());
-            return false;
-        } finally {
-            conexaoBD.closeConexao();
+            // Popula os dados comuns do Pet
+            pet.setIdPet(rs.getInt("p.id_pet"));
+            pet.setNome(rs.getString("p.nome"));
+            pet.setEspecie(rs.getString("p.especie"));
+            pet.setRaca(rs.getString("p.raca"));
+            pet.setDataNascimento(rs.getDate("p.data_nasc").toLocalDate());
+
+            // Pega o ID do Dono da tabela Possui
+            pet.setIdDonoTransporte(rs.getInt("po.id_dono"));
+
+            return pet;
         }
     }
 
     @Override
     public Pet buscarPorId(int id) {
-        String sql = SQL_SELECT_PETS + " WHERE p.id_pet = ?";
-        Pet pet = null;
-
-        try (Connection conexao = conexaoBD.getConexao();
-             PreparedStatement stmt = conexao.prepareStatement(sql)) {
-
-            stmt.setInt(1, id);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    pet = instanciarPet(rs);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro ao buscar pet por ID: " + e.getMessage());
-        } finally {
-            conexaoBD.closeConexao();
+        // SQL complexo que junta Pet (p) e Possui (po)
+        String sql = "SELECT p.*, po.id_dono " +
+                "FROM Pet p " +
+                "JOIN Possui po ON p.id_pet = po.id_pet " +
+                "WHERE p.id_pet = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, new Object[]{id}, new PetRowMapper());
+        } catch (Exception e) {
+            System.err.println("Pet não encontrado: " + e.getMessage());
+            return null;
         }
-        return pet;
     }
 
     @Override
     public List<Pet> listarPorDono(int idDono) {
-        // Precisamos de um JOIN com a tabela Possui
-        String sql = SQL_SELECT_PETS + " JOIN Possui pos ON p.id_pet = pos.id_pet WHERE pos.id_dono = ?";
-        List<Pet> pets = new ArrayList<>();
+        String sql = "SELECT p.*, po.id_dono " +
+                "FROM Pet p " +
+                "JOIN Possui po ON p.id_pet = po.id_pet " +
+                "WHERE po.id_dono = ?";
 
-        try (Connection conexao = conexaoBD.getConexao();
-             PreparedStatement stmt = conexao.prepareStatement(sql)) {
-
-            stmt.setInt(1, idDono);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Pet pet = instanciarPet(rs);
-                    pet.setIdDonoTransporte(idDono); // Seta o ID do dono para transporte
-                    pets.add(pet);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro ao listar pets por dono: " + e.getMessage());
-        } finally {
-            conexaoBD.closeConexao();
-        }
-        return pets;
+        return jdbcTemplate.query(sql, new Object[]{idDono}, new PetRowMapper());
     }
 
     @Override
     public List<Pet> listarTodos() {
-        String sql = SQL_SELECT_PETS;
-        List<Pet> pets = new ArrayList<>();
+        String sql = "SELECT p.*, po.id_dono " +
+                "FROM Pet p " +
+                "JOIN Possui po ON p.id_pet = po.id_pet";
 
-        try (Connection conexao = conexaoBD.getConexao();
-             PreparedStatement stmt = conexao.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                pets.add(instanciarPet(rs));
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro ao listar todos os pets: " + e.getMessage());
-        } finally {
-            conexaoBD.closeConexao();
-        }
-        return pets;
-    }
-
-    /**
-     * Método utilitário privado para instanciar o objeto Pet ou AnimalDeServico
-     * com base nos dados do ResultSet (que já contém o LEFT JOIN).
-     */
-    private Pet instanciarPet(ResultSet rs) throws SQLException {
-        Pet pet;
-        String numeroRegistro = rs.getString("numero_registro_oficial");
-
-        if (numeroRegistro != null) {
-            // É um Animal de Serviço
-            AnimalDeServico animal = new AnimalDeServico();
-            animal.setNumeroRegistroOficial(numeroRegistro);
-            animal.setStatus(rs.getString("status"));
-            pet = animal;
-        } else {
-            // É um Pet comum
-            pet = new Pet();
-        }
-
-        // Popula os dados básicos do Pet
-        pet.setIdPet(rs.getInt("id_pet"));
-        pet.setNome(rs.getString("nome"));
-        pet.setEspecie(rs.getString("especie"));
-        pet.setRaca(rs.getString("raca"));
-        pet.setDataNascimento(rs.getDate("data_nasc").toLocalDate());
-
-        // Nota: O idDono não está sendo populado aqui pois exigiria outro JOIN
-        // Estamos usando o 'idDonoTransporte' para isso.
-
-        return pet;
+        return jdbcTemplate.query(sql, new PetRowMapper());
     }
 }
 
