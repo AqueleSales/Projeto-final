@@ -1,16 +1,19 @@
 package model;
 
+import java.time.LocalDate;
+
 /**
- * Classe de Modelo que representa a entidade Animal_de_Servico.
- * Herda de Pet e adiciona atributos específicos.
+ * Classe de Modelo (POJO) que representa a entidade AnimalDeServico.
+ * Esta é uma especialização da classe Pet.
  */
 public class AnimalDeServico extends Pet {
 
     private String numeroRegistroOficial;
     private String status; // Ex: 'Ativo', 'Em Treinamento', 'Aposentado'
 
+    // Construtor
     public AnimalDeServico() {
-        super();
+        super(); // Chama o construtor da superclasse Pet
     }
 
     // Getters e Setters
@@ -33,9 +36,10 @@ public class AnimalDeServico extends Pet {
     @Override
     public String toString() {
         return "AnimalDeServico{" +
-                "pet=" + super.toString() +
+                "petInfo=" + super.toString() +
                 ", numeroRegistroOficial='" + numeroRegistroOficial + '\'' +
                 ", status='" + status + '\'' +
                 '}';
     }
 }
+

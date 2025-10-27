@@ -1,8 +1,8 @@
 package dao;
 
-// Corrigido para usar o pacote 'conexãoBD' e a classe 'ConexaoSQL' do seu projeto
 import conexãoBD.ConexaoSQL;
 import conexãoBD.IConexao;
+import model.AnimalDeServico;
 import model.Pet;
 
 import java.sql.*;
@@ -10,45 +10,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementação do DAO para Pet (Versão Corrigida).
- * Esta versão lida corretamente com a tabela de junção 'Possui' (M:N)
- * e usa transações para garantir a integridade dos dados.
+ * Implementação da interface IPetDAO para interagir com o banco de dados MySQL.
+ * Esta classe contém a lógica SQL para as operações de CRUD da entidade Pet
+ * e sua especialização AnimalDeServico.
  */
 public class PetDAO implements IPetDAO {
 
     private final IConexao conexaoBD;
+    private static final String SQL_SELECT_PETS =
+            "SELECT p.*, ads.numero_registro_oficial, ads.status " +
+                    "FROM Pet p " +
+                    "LEFT JOIN Animal_de_Servico ads ON p.id_pet = ads.id_pet";
 
     public PetDAO() {
-        // Corrigido para instanciar a sua classe ConexaoSQL
         this.conexaoBD = new ConexaoSQL();
     }
 
     @Override
     public Pet salvar(Pet pet) {
-        // Usamos duas instruções SQL: uma para Pet, uma para Possui
-        // A tabela Pet NÃO tem 'id_dono'
         String sqlPet = "INSERT INTO Pet (nome, especie, raca, data_nasc) VALUES (?, ?, ?, ?)";
         String sqlPossui = "INSERT INTO Possui (id_dono, id_pet) VALUES (?, ?)";
+        String sqlAnimalServico = "INSERT INTO Animal_de_Servico (id_pet, numero_registro_oficial, status) VALUES (?, ?, ?)";
         Connection conexao = null;
 
         try {
             conexao = conexaoBD.getConexao();
-            // Iniciar transação
-            conexao.setAutoCommit(false);
+            conexao.setAutoCommit(false); // Inicia a transação
 
             // --- Passo 1: Salvar o Pet ---
+            int idPetGerado;
             try (PreparedStatement stmtPet = conexao.prepareStatement(sqlPet, Statement.RETURN_GENERATED_KEYS)) {
                 stmtPet.setString(1, pet.getNome());
                 stmtPet.setString(2, pet.getEspecie());
                 stmtPet.setString(3, pet.getRaca());
                 stmtPet.setDate(4, Date.valueOf(pet.getDataNascimento()));
-
                 stmtPet.executeUpdate();
 
-                // Obter o ID gerado para o Pet
                 try (ResultSet generatedKeys = stmtPet.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        pet.setIdPet(generatedKeys.getInt(1));
+                        idPetGerado = generatedKeys.getInt(1);
+                        pet.setIdPet(idPetGerado);
                     } else {
                         throw new SQLException("Falha ao obter o ID do pet.");
                     }
@@ -56,25 +57,34 @@ public class PetDAO implements IPetDAO {
             }
 
             // --- Passo 2: Salvar a ligação na tabela Possui ---
-            // O pet.getIdDono() foi definido no main.java
-            if (pet.getIdDono() > 0) {
+            if (pet.getIdDonoTransporte() > 0) {
                 try (PreparedStatement stmtPossui = conexao.prepareStatement(sqlPossui)) {
-                    stmtPossui.setInt(1, pet.getIdDono());
-                    stmtPossui.setInt(2, pet.getIdPet());
+                    stmtPossui.setInt(1, pet.getIdDonoTransporte());
+                    stmtPossui.setInt(2, idPetGerado);
                     stmtPossui.executeUpdate();
                 }
             } else {
                 throw new SQLException("ID do Dono é inválido, não é possível salvar a relação.");
             }
 
-            // --- Passo 3: Efetivar a transação ---
-            conexao.commit();
-            System.out.println("Pet e relação Possui salvos com sucesso!");
+            // --- Passo 3: Salvar a especialização (se for Animal de Serviço) ---
+            if (pet instanceof AnimalDeServico) {
+                System.out.println("Salvando dados do Animal de Serviço...");
+                AnimalDeServico animal = (AnimalDeServico) pet;
+                try (PreparedStatement stmtAnimalServico = conexao.prepareStatement(sqlAnimalServico)) {
+                    stmtAnimalServico.setInt(1, idPetGerado);
+                    stmtAnimalServico.setString(2, animal.getNumeroRegistroOficial());
+                    stmtAnimalServico.setString(3, animal.getStatus());
+                    stmtAnimalServico.executeUpdate();
+                }
+            }
+
+            conexao.commit(); // Efetiva a transação
+            System.out.println("Pet e relações salvas com sucesso!");
             return pet;
 
         } catch (SQLException e) {
             System.err.println("Erro ao salvar pet (transação): " + e.getMessage());
-            // Reverter a transação em caso de erro
             if (conexao != null) {
                 try {
                     conexao.rollback();
@@ -85,7 +95,6 @@ public class PetDAO implements IPetDAO {
             }
             return null;
         } finally {
-            // Restaurar auto-commit e fechar conexão
             if (conexao != null) {
                 try {
                     conexao.setAutoCommit(true);
@@ -99,76 +108,50 @@ public class PetDAO implements IPetDAO {
 
     @Override
     public boolean atualizar(Pet pet) {
-        // A atualização agora só mexe na tabela Pet.
-        // Mudar o dono seria uma operação mais complexa (deletar/inserir em 'Possui')
-        String sql = "UPDATE Pet SET nome = ?, especie = ?, raca = ?, data_nasc = ? WHERE id_pet = ?";
-
-        try (Connection conexao = conexaoBD.getConexao();
-             PreparedStatement stmt = conexao.prepareStatement(sql)) {
-
-            stmt.setString(1, pet.getNome());
-            stmt.setString(2, pet.getEspecie());
-            stmt.setString(3, pet.getRaca());
-            stmt.setDate(4, Date.valueOf(pet.getDataNascimento()));
-            stmt.setInt(5, pet.getIdPet());
-
-            int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
-        } catch (SQLException e) {
-            System.err.println("Erro ao atualizar pet: " + e.getMessage());
-            return false;
-        } finally {
-            conexaoBD.closeConexao();
-        }
-    }
-
-    @Override
-    public boolean deletar(int id) {
-        // Precisamos deletar as relações primeiro (tabela Possui e outras)
-        String sqlPossui = "DELETE FROM Possui WHERE id_pet = ?";
-        // TODO: Adicionar DELETE para AnimalDeServico, CertificadoVacina, etc.
-        String sqlPet = "DELETE FROM Pet WHERE id_pet = ?";
+        String sqlPet = "UPDATE Pet SET nome = ?, especie = ?, raca = ?, data_nasc = ? WHERE id_pet = ?";
+        String sqlAnimalServico = "UPDATE Animal_de_Servico SET numero_registro_oficial = ?, status = ? WHERE id_pet = ?";
         Connection conexao = null;
-
         try {
             conexao = conexaoBD.getConexao();
-            // Iniciar transação
-            conexao.setAutoCommit(false);
+            conexao.setAutoCommit(false); // Transação
 
-            // --- Passo 1: Deletar da tabela Possui ---
-            // (Idealmente, deletar de AnimalDeServico e CertificadoVacina primeiro)
-            try (PreparedStatement stmtPossui = conexao.prepareStatement(sqlPossui)) {
-                stmtPossui.setInt(1, id);
-                stmtPossui.executeUpdate();
+            // Atualiza Pet
+            try (PreparedStatement stmtPet = conexao.prepareStatement(sqlPet)) {
+                stmtPet.setString(1, pet.getNome());
+                stmtPet.setString(2, pet.getEspecie());
+                stmtPet.setString(3, pet.getRaca());
+                stmtPet.setDate(4, Date.valueOf(pet.getDataNascimento()));
+                stmtPet.setInt(5, pet.getIdPet());
+                stmtPet.executeUpdate();
             }
 
-            // --- Passo 2: Deletar da tabela Pet ---
-            try (PreparedStatement stmtPet = conexao.prepareStatement(sqlPet)) {
-                stmtPet.setInt(1, id);
-                int affectedRows = stmtPet.executeUpdate();
-                if (affectedRows == 0) {
-                    System.out.println("Nenhum pet encontrado para deletar com ID: " + id);
+            // Atualiza AnimalDeServico (se for)
+            if (pet instanceof AnimalDeServico) {
+                AnimalDeServico animal = (AnimalDeServico) pet;
+                try (PreparedStatement stmtAnimalServico = conexao.prepareStatement(sqlAnimalServico)) {
+                    stmtAnimalServico.setString(1, animal.getNumeroRegistroOficial());
+                    stmtAnimalServico.setString(2, animal.getStatus());
+                    stmtAnimalServico.setInt(3, animal.getIdPet());
+                    stmtAnimalServico.executeUpdate();
                 }
             }
 
-            // --- Passo 3: Efetivar a transação ---
-            conexao.commit();
-            return true;
+            // Nota: a relação Possui (id_dono) não está sendo atualizada por simplicidade.
 
+            conexao.commit();
+            System.out.println("Pet atualizado com sucesso!");
+            return true;
         } catch (SQLException e) {
-            System.err.println("Erro ao deletar pet (transação): " + e.getMessage());
-            // Reverter a transação em caso de erro
+            System.err.println("Erro ao atualizar pet: " + e.getMessage());
             if (conexao != null) {
                 try {
                     conexao.rollback();
-                    System.err.println("Transação revertida.");
                 } catch (SQLException ex) {
-                    System.err.println("Erro ao reverter a transação: " + ex.getMessage());
+                    System.err.println("Erro ao reverter transação: " + ex.getMessage());
                 }
             }
             return false;
         } finally {
-            // Restaurar auto-commit e fechar conexão
             if (conexao != null) {
                 try {
                     conexao.setAutoCommit(true);
@@ -181,12 +164,35 @@ public class PetDAO implements IPetDAO {
     }
 
     @Override
+    public boolean deletar(int id) {
+        // Graças ao "ON DELETE CASCADE" no banco de dados:
+        // 1. Deletar um Pet irá deletar o registro em Animal_de_Servico.
+        // 2. Deletar um Pet irá deletar o registro em Possui.
+        // 3. Deletar um Pet irá deletar os registros em CertificadoVacina.
+        // 4. Deletar um AnimalDeServico (id_pet) irá deletar os registros em Credencial_Servico
+        //    (e este irá deletar Credencial_Habilidade).
+
+        // Portanto, SÓ precisamos deletar da tabela Pet.
+        String sql = "DELETE FROM Pet WHERE id_pet = ?";
+
+        try (Connection conexao = conexaoBD.getConexao();
+             PreparedStatement stmt = conexao.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            int affectedRows = stmt.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Erro ao deletar pet: " + e.getMessage());
+            return false;
+        } finally {
+            conexaoBD.closeConexao();
+        }
+    }
+
+    @Override
     public Pet buscarPorId(int id) {
-        // Busca o Pet e o ID do seu dono na tabela Possui
-        String sql = "SELECT p.*, po.id_dono " +
-                "FROM Pet p " +
-                "LEFT JOIN Possui po ON p.id_pet = po.id_pet " +
-                "WHERE p.id_pet = ?";
+        String sql = SQL_SELECT_PETS + " WHERE p.id_pet = ?";
         Pet pet = null;
 
         try (Connection conexao = conexaoBD.getConexao();
@@ -196,13 +202,7 @@ public class PetDAO implements IPetDAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    pet = new Pet();
-                    pet.setIdPet(rs.getInt("id_pet"));
-                    pet.setNome(rs.getString("nome"));
-                    pet.setEspecie(rs.getString("especie"));
-                    pet.setRaca(rs.getString("raca"));
-                    pet.setDataNascimento(rs.getDate("data_nasc").toLocalDate());
-                    pet.setIdDono(rs.getInt("id_dono")); // Pega o ID da tabela Possui
+                    pet = instanciarPet(rs);
                 }
             }
         } catch (SQLException e) {
@@ -215,11 +215,8 @@ public class PetDAO implements IPetDAO {
 
     @Override
     public List<Pet> listarPorDono(int idDono) {
-        // Busca todos os pets de um dono específico
-        String sql = "SELECT p.* " +
-                "FROM Pet p " +
-                "JOIN Possui po ON p.id_pet = po.id_pet " +
-                "WHERE po.id_dono = ?";
+        // Precisamos de um JOIN com a tabela Possui
+        String sql = SQL_SELECT_PETS + " JOIN Possui pos ON p.id_pet = pos.id_pet WHERE pos.id_dono = ?";
         List<Pet> pets = new ArrayList<>();
 
         try (Connection conexao = conexaoBD.getConexao();
@@ -229,13 +226,8 @@ public class PetDAO implements IPetDAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    Pet pet = new Pet();
-                    pet.setIdPet(rs.getInt("id_pet"));
-                    pet.setNome(rs.getString("nome"));
-                    pet.setEspecie(rs.getString("especie"));
-                    pet.setRaca(rs.getString("raca"));
-                    pet.setDataNascimento(rs.getDate("data_nasc").toLocalDate());
-                    pet.setIdDono(idDono); // Nós já sabemos o ID do dono
+                    Pet pet = instanciarPet(rs);
+                    pet.setIdDonoTransporte(idDono); // Seta o ID do dono para transporte
                     pets.add(pet);
                 }
             }
@@ -249,8 +241,7 @@ public class PetDAO implements IPetDAO {
 
     @Override
     public List<Pet> listarTodos() {
-        // Lista todos os pets, mas sem os donos
-        String sql = "SELECT * FROM Pet";
+        String sql = SQL_SELECT_PETS;
         List<Pet> pets = new ArrayList<>();
 
         try (Connection conexao = conexaoBD.getConexao();
@@ -258,14 +249,7 @@ public class PetDAO implements IPetDAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                Pet pet = new Pet();
-                pet.setIdPet(rs.getInt("id_pet"));
-                pet.setNome(rs.getString("nome"));
-                pet.setEspecie(rs.getString("especie"));
-                pet.setRaca(rs.getString("raca"));
-                pet.setDataNascimento(rs.getDate("data_nasc").toLocalDate());
-                // pet.setIdDono(0); // Não sabemos o dono aqui
-                pets.add(pet);
+                pets.add(instanciarPet(rs));
             }
         } catch (SQLException e) {
             System.err.println("Erro ao listar todos os pets: " + e.getMessage());
@@ -273,6 +257,38 @@ public class PetDAO implements IPetDAO {
             conexaoBD.closeConexao();
         }
         return pets;
+    }
+
+    /**
+     * Método utilitário privado para instanciar o objeto Pet ou AnimalDeServico
+     * com base nos dados do ResultSet (que já contém o LEFT JOIN).
+     */
+    private Pet instanciarPet(ResultSet rs) throws SQLException {
+        Pet pet;
+        String numeroRegistro = rs.getString("numero_registro_oficial");
+
+        if (numeroRegistro != null) {
+            // É um Animal de Serviço
+            AnimalDeServico animal = new AnimalDeServico();
+            animal.setNumeroRegistroOficial(numeroRegistro);
+            animal.setStatus(rs.getString("status"));
+            pet = animal;
+        } else {
+            // É um Pet comum
+            pet = new Pet();
+        }
+
+        // Popula os dados básicos do Pet
+        pet.setIdPet(rs.getInt("id_pet"));
+        pet.setNome(rs.getString("nome"));
+        pet.setEspecie(rs.getString("especie"));
+        pet.setRaca(rs.getString("raca"));
+        pet.setDataNascimento(rs.getDate("data_nasc").toLocalDate());
+
+        // Nota: O idDono não está sendo populado aqui pois exigiria outro JOIN
+        // Estamos usando o 'idDonoTransporte' para isso.
+
+        return pet;
     }
 }
 

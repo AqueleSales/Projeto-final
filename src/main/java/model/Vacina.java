@@ -9,10 +9,19 @@ public class Vacina {
     private String nomeVacina;
     private String tipo;
 
-    // Construtores, Getters e Setters
+    // Construtores
     public Vacina() {
     }
 
+    /**
+     * Construtor para facilitar a criação de vacinas no teste.
+     */
+    public Vacina(String nomeVacina, String tipo) {
+        this.nomeVacina = nomeVacina;
+        this.tipo = tipo;
+    }
+
+    // Getters e Setters
     public int getIdVacina() {
         return idVacina;
     }
@@ -36,4 +45,14 @@ public class Vacina {
     public void setTipo(String tipo) {
         this.tipo = tipo;
     }
+
+    @Override
+    public String toString() {
+        return "Vacina{" +
+                "idVacina=" + idVacina +
+                ", nomeVacina='" + nomeVacina + '\'' +
+                ", tipo='" + tipo + '\'' +
+                '}';
+    }
 }
+
