@@ -42,4 +42,11 @@ public interface IPessoaDAO {
      * @return Uma lista de objetos Pessoa.
      */
     List<Pessoa> listarTodos();
+
+    /**
+     * Busca uma Pessoa (Dono ou Veterinario) pelo e-mail para fazer login.
+     * @param email O e-mail a ser verificado.
+     * @return A Pessoa encontrada, ou null.
+     */
+    Pessoa buscarPorEmail(String email);
 }

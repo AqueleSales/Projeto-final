@@ -16,32 +16,28 @@ import java.util.List;
 
 /**
  * Implementação do DAO para Pessoa, agora usando Spring Boot e JdbcTemplate.
- * A anotação @Repository informa ao Spring que esta é uma classe de acesso a dados.
+ * ATUALIZADO: Salva e busca o campo 'senha'.
  */
 @Repository
 public class PessoaDAO implements IPessoaDAO {
 
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * O Spring Boot vai "injetar" (fornecer) o JdbcTemplate automaticamente.
-     * Ele já vem configurado com a conexão do arquivo application.properties.
-     */
     @Autowired
     public PessoaDAO(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
-     * A anotação @Transactional cuida de toda a lógica de transação
-     * (commit e rollback) para nós.
+     * Salva a pessoa.
+     * A SENHA já deve vir CRIPTOGRAFADA do Controller (DonoController).
      */
     @Override
     @Transactional
     public Pessoa salvar(Pessoa pessoa) {
-        String sqlPessoa = "INSERT INTO Pessoa (nome, cpf, email) VALUES (?, ?, ?)";
+        // --- ATUALIZADO ---
+        String sqlPessoa = "INSERT INTO Pessoa (nome, cpf, email, senha) VALUES (?, ?, ?, ?)";
 
-        // KeyHolder é usado para pegar o ID auto-gerado pelo banco
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         // 1. Salvar Pessoa
@@ -50,10 +46,11 @@ public class PessoaDAO implements IPessoaDAO {
             stmt.setString(1, pessoa.getNome());
             stmt.setString(2, pessoa.getCpf());
             stmt.setString(3, pessoa.getEmail());
+            // --- NOVO CAMPO DE SENHA ---
+            stmt.setString(4, pessoa.getSenha());
             return stmt;
         }, keyHolder);
 
-        // Pega o ID gerado e define na pessoa
         int idPessoa = keyHolder.getKey().intValue();
         pessoa.setIdPessoa(idPessoa);
 
@@ -83,6 +80,7 @@ public class PessoaDAO implements IPessoaDAO {
 
     @Override
     public boolean atualizar(Pessoa pessoa) {
+        // (Ignorando atualização de senha por simplicidade)
         String sql = "UPDATE Pessoa SET nome = ?, cpf = ?, email = ? WHERE id_pessoa = ?";
 
         int affectedRows = jdbcTemplate.update(sql,
@@ -91,16 +89,9 @@ public class PessoaDAO implements IPessoaDAO {
                 pessoa.getEmail(),
                 pessoa.getIdPessoa());
 
-        // Lógica de atualização de telefones (deletar antigos, inserir novos)
-        // seria implementada aqui. Por enquanto, atualizamos só a pessoa.
-
         return affectedRows > 0;
     }
 
-    /**
-     * Graças ao 'ON DELETE CASCADE' no nosso SQL, só precisamos deletar
-     * da tabela 'Pessoa'. O banco cuida do resto.
-     */
     @Override
     public boolean deletar(int id) {
         String sql = "DELETE FROM Pessoa WHERE id_pessoa = ?";
@@ -110,19 +101,19 @@ public class PessoaDAO implements IPessoaDAO {
 
     @Override
     public Pessoa buscarPorId(int id) {
-        // Esta é uma implementação simplificada que não carrega especializações
-        // ou telefones. Vamos criar um Controller para lidar com isso.
         String sql = "SELECT * FROM Pessoa WHERE id_pessoa = ?";
 
         try {
-            return jdbcTemplate.queryForObject(sql, new Object[]{id}, (rs, rowNum) ->
-                    new Pessoa(
-                            rs.getInt("id_pessoa"),
-                            rs.getString("nome"),
-                            rs.getString("cpf"),
-                            rs.getString("email")
-                    )
-            );
+            return jdbcTemplate.queryForObject(sql, new Object[]{id}, (rs, rowNum) -> {
+                Pessoa p = new Pessoa(
+                        rs.getInt("id_pessoa"),
+                        rs.getString("nome"),
+                        rs.getString("cpf"),
+                        rs.getString("email")
+                );
+                p.setSenha(rs.getString("senha")); // Puxa a senha do banco
+                return p;
+            });
         } catch (Exception e) {
             System.err.println("Pessoa não encontrada: " + e.getMessage());
             return null;
@@ -133,14 +124,38 @@ public class PessoaDAO implements IPessoaDAO {
     public List<Pessoa> listarTodos() {
         String sql = "SELECT * FROM Pessoa";
 
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-                new Pessoa(
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Pessoa p = new Pessoa(
+                    rs.getInt("id_pessoa"),
+                    rs.getString("nome"),
+                    rs.getString("cpf"),
+                    rs.getString("email")
+            );
+            p.setSenha(rs.getString("senha")); // Puxa a senha do banco
+            return p;
+        });
+    }
+
+    // --- MÉTODO DE LOGIN ATUALIZADO ---
+    @Override
+    public Pessoa buscarPorEmail(String email) {
+        String sql = "SELECT * FROM Pessoa WHERE email = ?";
+        try {
+            // RowMapper completo que também busca a senha
+            return jdbcTemplate.queryForObject(sql, new Object[]{email}, (rs, rowNum) -> {
+                Pessoa p = new Pessoa(
                         rs.getInt("id_pessoa"),
                         rs.getString("nome"),
                         rs.getString("cpf"),
                         rs.getString("email")
-                )
-        );
+                );
+                // --- IMPORTANTE ---
+                p.setSenha(rs.getString("senha")); // Puxa a senha (criptografada) do banco
+                return p;
+            });
+        } catch (Exception e) {
+            System.err.println("Pessoa não encontrada com o e-mail: " + email);
+            return null;
+        }
     }
 }
-

@@ -5,8 +5,7 @@ import java.util.List;
 
 /**
  * Classe de Modelo (POJO) que representa a entidade Pessoa.
- * Esta classe é usada para transportar os dados de uma pessoa
- * entre as diferentes camadas da aplicação.
+ * ATUALIZADO: Inclui o campo 'senha'
  */
 public class Pessoa {
 
@@ -15,6 +14,9 @@ public class Pessoa {
     private String cpf;
     private String email;
     private List<String> telefones; // Para o atributo multivalorado
+
+    // --- NOVO CAMPO ADICIONADO ---
+    private String senha;
 
     // Construtor padrão
     public Pessoa() {
@@ -70,6 +72,16 @@ public class Pessoa {
     public void setTelefones(List<String> telefones) {
         this.telefones = telefones;
     }
+
+    // --- GETTER E SETTER PARA O NOVO CAMPO 'SENHA' ---
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+    // ----------------------------------------------------
 
     // Método para adicionar um telefone à lista
     public void addTelefone(String telefone) {

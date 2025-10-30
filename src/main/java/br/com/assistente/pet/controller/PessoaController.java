@@ -5,50 +5,53 @@ import model.Pessoa;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+// --- NOVO IMPORT ---
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
  * Controlador REST que expõe os endpoints (URLs) para a entidade Pessoa.
- * O aplicativo de celular vai fazer requisições para estas URLs.
+ * ATUALIZADO: Agora injeta PasswordEncoder e usa o método de login seguro.
  */
-@RestController // Informa ao Spring que esta classe é um Controlador REST
-@RequestMapping("/api/pessoas") // Todos os métodos aqui começarão com /api/pessoas
+@RestController
+@RequestMapping("/api/pessoas")
 public class PessoaController {
 
     private final IPessoaDAO pessoaDAO;
 
-    // O Spring vai injetar o PessoaDAO (que já configuramos como @Repository)
+    // --- NOVO CAMPO ---
+    private final PasswordEncoder passwordEncoder;
+
+    // --- CONSTRUTOR ATUALIZADO ---
+    // O Spring vai injetar o PessoaDAO e o PasswordEncoder (do SecurityConfig)
     @Autowired
-    public PessoaController(IPessoaDAO pessoaDAO) {
+    public PessoaController(IPessoaDAO pessoaDAO, PasswordEncoder passwordEncoder) {
         this.pessoaDAO = pessoaDAO;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
      * Endpoint para SALVAR uma nova pessoa.
-     * O app de celular vai chamar: POST /api/pessoas
-     *
-     * @param pessoa Os dados da pessoa (em JSON) vindos do app celular.
-     * @return A pessoa salva (com o ID) ou uma mensagem de erro.
+     * NOTA: Este é um endpoint genérico. A CRIAÇÃO de Donos (com criptografia)
+     * está sendo feita no 'DonoController' para manter a lógica separada.
      */
     @PostMapping
     public ResponseEntity<Pessoa> salvarPessoa(@RequestBody Pessoa pessoa) {
         try {
+            // Este método salvará a pessoa SEM criptografar a senha,
+            // pois não foi projetado para isso. O DonoController cuida do registro.
             Pessoa pessoaSalva = pessoaDAO.salvar(pessoa);
             return new ResponseEntity<>(pessoaSalva, HttpStatus.CREATED);
         } catch (Exception e) {
             System.err.println("Erro ao salvar pessoa: " + e.getMessage());
-            // Em um app real, retornaríamos um objeto de erro mais detalhado
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * Endpoint para LISTAR todas as pessoas.
-     * O app de celular vai chamar: GET /api/pessoas
-     *
-     * @return Uma lista de todas as pessoas.
      */
     @GetMapping
     public ResponseEntity<List<Pessoa>> listarPessoas() {
@@ -58,10 +61,6 @@ public class PessoaController {
 
     /**
      * Endpoint para BUSCAR uma pessoa por ID.
-     * O app de celular vai chamar: GET /api/pessoas/1 (por exemplo)
-     *
-     * @param id O ID da pessoa (vindo da URL).
-     * @return A pessoa encontrada ou um erro 404 (Not Found).
      */
     @GetMapping("/{id}")
     public ResponseEntity<Pessoa> buscarPessoaPorId(@PathVariable int id) {
@@ -75,39 +74,66 @@ public class PessoaController {
 
     /**
      * Endpoint para ATUALIZAR uma pessoa.
-     * O app de celular vai chamar: PUT /api/pessoas/1 (por exemplo)
-     *
-     * @param id O ID da pessoa a atualizar.
-     * @param pessoa Os novos dados da pessoa (em JSON).
-     * @return A pessoa atualizada ou um erro.
      */
     @PutMapping("/{id}")
     public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable int id, @RequestBody Pessoa pessoa) {
-        // Garante que o ID da URL seja o mesmo do objeto
         pessoa.setIdPessoa(id);
         boolean atualizou = pessoaDAO.atualizar(pessoa);
         if (atualizou) {
             return new ResponseEntity<>(pessoa, HttpStatus.OK);
         } else {
-            // Poderia ser 404 (se não encontrou) ou 500 (erro ao atualizar)
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * Endpoint para DELETAR uma pessoa.
-     * O app de celular vai chamar: DELETE /api/pessoas/1 (por exemplo)
-     *
-     * @param id O ID da pessoa a deletar.
-     * @return Uma resposta de sucesso (204 No Content) ou erro.
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarPessoa(@PathVariable int id) {
         boolean deletou = pessoaDAO.deletar(id);
         if (deletou) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Sucesso, sem conteúdo
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Não encontrou para deletar
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-}
+
+    //
+    // ----------------------------------------
+    // MÉTODO DE LOGIN ATUALIZADO (COM SENHA REAL)
+    // ----------------------------------------
+    //
+    /**
+     * Endpoint para LOGIN.
+     * O app de celular vai chamar: POST /api/pessoas/login
+     *
+     * @param loginData Os dados de login (JSON) vindos do app.
+     * @return A Pessoa (com o ID) se o login for sucesso, ou erro 401/404.
+     */
+    @PostMapping("/login")
+    public ResponseEntity<Pessoa> login(@RequestBody Pessoa loginData) {
+        // 1. Busca o usuário pelo e-mail
+        // (O PessoaDAO.buscarPorEmail foi atualizado para trazer a senha)
+        Pessoa pessoaNoBanco = pessoaDAO.buscarPorEmail(loginData.getEmail());
+
+        if (pessoaNoBanco != null) {
+            // 2. Compara a senha do app com a senha criptografada do banco
+
+            String senhaDoApp = loginData.getSenha(); // Senha pura (ex: "123456")
+            String senhaDoBanco = pessoaNoBanco.getSenha(); // Senha hash (ex: "$2a$10$...")
+
+            if (passwordEncoder.matches(senhaDoApp, senhaDoBanco)) {
+                // Sucesso! A senha bate.
+                return new ResponseEntity<>(pessoaNoBanco, HttpStatus.OK);
+            } else {
+                // Senha errada
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // 401 Não Autorizado
+            }
+        } else {
+            // E-mail não encontrado
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404 Não Encontrado
+        }
+    }
+
+} // <-- Fim da classe

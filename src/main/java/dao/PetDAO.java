@@ -29,6 +29,8 @@ public class PetDAO implements IPetDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    // Cole isto dentro do seu PetDAO.java, substituindo o método salvar() antigo
+
     @Override
     @Transactional
     public Pet salvar(Pet pet) {
@@ -41,7 +43,17 @@ public class PetDAO implements IPetDAO {
             stmt.setString(1, pet.getNome());
             stmt.setString(2, pet.getEspecie());
             stmt.setString(3, pet.getRaca());
-            stmt.setDate(4, java.sql.Date.valueOf(pet.getDataNascimento()));
+
+            // --- AQUI ESTÁ A CORREÇÃO ---
+            // Checa se a data de nascimento é nula antes de salvar
+            if (pet.getDataNascimento() != null) {
+                stmt.setDate(4, java.sql.Date.valueOf(pet.getDataNascimento()));
+            } else {
+                // Se for nula, manda um NULL para o banco de dados
+                stmt.setNull(4, java.sql.Types.DATE);
+            }
+            // --- FIM DA CORREÇÃO ---
+
             return stmt;
         }, keyHolder);
 
@@ -49,12 +61,10 @@ public class PetDAO implements IPetDAO {
         pet.setIdPet(idPet);
 
         // 2. Salvar a ligação na tabela Possui
-        // Usamos o campo 'idDonoTransporte' que definimos no modelo
         if (pet.getIdDonoTransporte() > 0) {
             String sqlPossui = "INSERT INTO Possui (id_dono, id_pet) VALUES (?, ?)";
             jdbcTemplate.update(sqlPossui, pet.getIdDonoTransporte(), idPet);
         } else {
-            // Se não foi passado um Dono, é um erro na lógica de negócio
             throw new RuntimeException("ID do Dono é inválido, não é possível salvar a relação.");
         }
 
