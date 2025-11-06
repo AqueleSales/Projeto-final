@@ -1,0 +1,716 @@
+dashboard-treinador.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Treinador | Assistente Pet</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+          background: #ecf1f4;
+          min-height: 100vh;
+        }
+
+        /* =============================
+     HEADER
+  ============================= */
+        header {
+          background: #2ecc71;
+          display: flex;
+          align-items: center;
+          padding: 1rem 2rem;
+          gap: 10px;
+          border-radius: 0 0 12px 12px;
+        }
+
+        header h1 {
+          color: white;
+          font-size: 1.4rem;
+          font-weight: 600;
+        }
+
+        /* Botões do header */
+        .new-pet-btn {
+          background: #27ae60;
+          border: none;
+          padding: 10px 18px;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          color: #fff;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+
+        .new-pet-btn:hover {
+          filter: brightness(0.9);
+        }
+
+        /* =============================
+     CONTEINER PRINCIPAL
+  ============================= */
+        .container {
+          width: 95%;
+          max-width: 750px;
+          background: #fff;
+          padding: 2rem;
+          border-radius: 12px;
+          margin: 2rem auto;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+          animation: fadeIn 0.35s ease;
+        }
+
+        .container h2 {
+          text-align: center;
+          margin-bottom: 1rem;
+          color: #2ecc71;
+        }
+
+        /* =============================
+     BUSCA CPF
+  ============================= */
+        #form-busca-cpf {
+          display: flex;
+          gap: 12px;
+        }
+
+        #form-busca-cpf input {
+          flex: 1;
+          padding: 12px;
+          border: 1.8px solid #dcdcdc;
+          border-radius: 8px;
+          font-size: 1rem;
+        }
+
+        #form-busca-cpf button {
+          background: #2ecc71;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 20px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: 0.15s ease;
+        }
+        #form-busca-cpf button:hover {
+          filter: brightness(0.92);
+        }
+
+        /* =============================
+     LISTA PETS
+  ============================= */
+        #lista-pets-dono {
+          list-style: none;
+          margin-top: 15px;
+        }
+
+        #lista-pets-dono li {
+          background: #f9f9f9;
+          padding: 15px;
+          border-radius: 8px;
+          border: 1.5px solid #e7e7e7;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+
+        #lista-pets-dono .pet-info {
+          font-size: 1.05rem;
+        }
+        #lista-pets-dono .pet-info span {
+          font-weight: 600;
+        }
+
+        /* Botões */
+        .pet-actions {
+          display: flex;
+          gap: 10px;
+        }
+
+        .pet-actions button {
+          padding: 8px 12px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+          color: white;
+          transition: 0.2s;
+        }
+
+        .btn-gerenciar-status {
+          background: #007bff;
+        }
+        .btn-gerenciar-status:hover {
+          background: #005dc5;
+        }
+
+        .pet-actions button:last-child {
+          background: #28a745;
+        }
+        .pet-actions button:last-child:hover {
+          background: #208a36;
+        }
+
+        /* =============================
+     MODAL
+  ============================= */
+        .modal {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+        }
+
+        .modal-content {
+          background: #fff;
+          width: 95%;
+          max-width: 500px;
+          padding: 25px;
+          border-radius: 12px;
+          animation: scaleUp 0.25s ease;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-content h3 {
+          margin-bottom: 1rem;
+          font-size: 1.25rem;
+          text-align: center;
+          color: #2ecc71;
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 1rem;
+        }
+
+        #btn-cancelar-credencial,
+        #btn-cancelar-status {
+          background: #6c757d;
+        }
+        #btn-salvar-credencial {
+          background: #28a745;
+        }
+        #btn-salvar-status {
+          background: #007bff;
+        }
+
+        .modal-actions button {
+          flex: 1;
+          padding: 12px;
+          border: none;
+          border-radius: 6px;
+          color: white;
+          cursor: pointer;
+          font-weight: 600;
+          transition: 0.2s;
+        }
+        .modal-actions button:hover {
+          filter: brightness(0.92);
+        }
+
+        /* Inputs modal */
+        .modal-form input,
+        .modal-form select {
+          width: 100%;
+          border: 1.8px solid #dcdcdc;
+          padding: 10px;
+          border-radius: 8px;
+          font-size: 1rem;
+        }
+
+        /* =============================
+     ANIMAÇÕES
+  ============================= */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes scaleUp {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1 id="treinador-nome">Dashboard Treinador</h1>
+
+    <a
+            href="admin-habilidades.html"
+            class="new-pet-btn"
+            style="background-color: #f39c12; margin-left: auto"
+    >Gerenciar Habilidades</a
+    >
+
+    <button
+            class="new-pet-btn"
+            id="btn-perfil"
+            style="background-color: #007bff; margin-left: 10px"
+    >
+        Meu Perfil
+    </button>
+    <button
+            class="new-pet-btn"
+            id="btn-logout"
+            style="background-color: #aaa; margin-left: 10px"
+    >
+        Sair
+    </button>
+</header>
+
+<main>
+    <div class="container">
+        <h2>Buscar Dono por CPF</h2>
+        <form id="form-busca-cpf">
+            <input
+                    type="text"
+                    id="input-cpf"
+                    placeholder="Digite o CPF do dono (só números)"
+                    maxlength="11"
+                    required
+            />
+            <button type="submit">Buscar</button>
+        </form>
+    </div>
+
+    <div class="container" id="resultado-busca">
+        <h2>Resultados para: <span id="nome-dono-encontrado"></span></h2>
+        <ul id="lista-pets-dono"></ul>
+        <p id="msg-sem-pets" style="display: none">
+            Este dono não possui pets cadastrados.
+        </p>
+    </div>
+</main>
+
+<div id="modal-credencial" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-titulo-credencial">
+            Emitir Credencial de Serviço para [Nome do Pet]
+        </h3>
+
+        <form id="form-credencial" class="modal-form">
+            <input type="hidden" id="credencial-id-pet" />
+            <input type="hidden" id="credencial-id-treinador" />
+
+            <div>
+                <label for="credencial-data-emissao">Data de Emissão *</label>
+                <input type="date" id="credencial-data-emissao" required />
+            </div>
+
+            <div>
+                <label for="credencial-data-validade"
+                >Data de Validade (Opcional)</label
+                >
+                <input type="date" id="credencial-data-validade" />
+            </div>
+
+            <div class="full-width">
+                <label>Habilidades Atestadas *</label>
+                <div id="habilidades-checklist">
+                    <p>Carregando habilidades...</p>
+                </div>
+            </div>
+
+            <div class="modal-actions full-width">
+                <button type="button" id="btn-cancelar-credencial">Cancelar</button>
+                <button type="submit" id="btn-salvar-credencial">
+                    Salvar Credencial
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-status-servico" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-titulo-status">
+            Gerenciar Status de Serviço para [Nome do Pet]
+        </h3>
+        <p style="font-size: 0.9rem; margin-top: -10px; color: #555">
+            Use este formulário para "promover" um pet a Animal de Serviço ou
+            atualizar seus dados de registro.
+        </p>
+
+        <form
+                id="form-status-servico"
+                class="modal-form"
+                style="grid-template-columns: 1fr"
+        >
+            <input type="hidden" id="status-id-pet" />
+
+            <div>
+                <label for="status-pet-registro">Número de Registro Oficial</label>
+                <input
+                        type="text"
+                        id="status-pet-registro"
+                        placeholder="Ex: AS-BR-001"
+                />
+            </div>
+            <div>
+                <label for="status-pet-status">Status do Animal</label>
+                <select id="status-pet-status">
+                    <option value="Em Treinamento">Em Treinamento</option>
+                    <option value="Ativo">Ativo</option>
+                    <option value="Aposentado">Aposentado</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btn-cancelar-status">Cancelar</button>
+                <button type="submit" id="btn-salvar-status">Salvar Status</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // --- 1. VARIÁVEIS GLOBAIS ---
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+    let donoEncontrado = null;
+
+    // --- 2. ELEMENTOS DO DOM ---
+    const treinadorNome = document.getElementById("treinador-nome");
+    const btnPerfil = document.getElementById("btn-perfil");
+    const btnLogout = document.getElementById("btn-logout");
+
+    const formBuscaCpf = document.getElementById("form-busca-cpf");
+    const inputCpf = document.getElementById("input-cpf");
+    const resultadoBuscaDiv = document.getElementById("resultado-busca");
+    const nomeDonoSpan = document.getElementById("nome-dono-encontrado");
+    const listaPetsUl = document.getElementById("lista-pets-dono");
+    const msgSemPets = document.getElementById("msg-sem-pets");
+
+    // Modal Credencial
+    const modalCredencial = document.getElementById("modal-credencial");
+    const modalTituloCredencial = document.getElementById(
+      "modal-titulo-credencial"
+    );
+    const formCredencial = document.getElementById("form-credencial");
+    const btnCancelarCredencial = document.getElementById(
+      "btn-cancelar-credencial"
+    );
+    const hiddenIdPet = document.getElementById("credencial-id-pet");
+    const hiddenIdTreinador = document.getElementById(
+      "credencial-id-treinador"
+    );
+    const inputDataEmissao = document.getElementById(
+      "credencial-data-emissao"
+    );
+    const inputDataValidade = document.getElementById(
+      "credencial-data-validade"
+    );
+    const habilidadesChecklist = document.getElementById(
+      "habilidades-checklist"
+    );
+
+    // Modal Status
+    const modalStatusServico = document.getElementById(
+      "modal-status-servico"
+    );
+    const modalTituloStatus = document.getElementById("modal-titulo-status");
+    const formStatusServico = document.getElementById("form-status-servico");
+    const btnCancelarStatus = document.getElementById("btn-cancelar-status");
+    const statusIdPet = document.getElementById("status-id-pet");
+    const statusPetRegistro = document.getElementById("status-pet-registro");
+    const statusPetStatus = document.getElementById("status-pet-status");
+
+    // --- 3. INICIALIZAÇÃO DA PÁGINA ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Segurança
+      if (!usuarioLogado || usuarioLogado.role !== "TREINADOR") {
+        alert("Acesso negado. Você precisa ser um treinador.");
+        window.location.href = "login.html";
+        return;
+      }
+      // Preenche o nome
+      treinadorNome.textContent = `Treinador(a) ${
+        usuarioLogado.nome.split(" ")[0]
+      }`;
+      // Carrega as habilidades para o modal
+      carregarHabilidadesParaModal();
+    });
+
+    // --- 4. FUNÇÕES DE CARREGAMENTO (HABILIDADES) ---
+    async function carregarHabilidadesParaModal() {
+      try {
+        const response = await fetch("/api/habilidades");
+        if (response.ok) {
+          const habilidades = await response.json();
+          habilidadesChecklist.innerHTML = "";
+          if (habilidades.length === 0) {
+            habilidadesChecklist.innerHTML =
+              '<p>Nenhuma habilidade cadastrada. Vá para "Gerenciar Habilidades".</p>';
+          }
+
+          habilidades.forEach((h) => {
+            habilidadesChecklist.innerHTML += `
+                      <div>
+                          <input type="checkbox" id="hab-${h.idHabilidade}" value="${h.idHabilidade}">
+                          <label for="hab-${h.idHabilidade}">${h.descricaoHabilidade}</label>
+                      </div>
+                  `;
+          });
+        } else {
+          habilidadesChecklist.innerHTML =
+            "<p>Erro ao carregar habilidades.</p>";
+        }
+      } catch (error) {
+        console.error("Erro ao carregar habilidades:", error);
+        habilidadesChecklist.innerHTML = "<p>Erro de rede ao carregar.</p>";
+      }
+    }
+
+    // --- 5. LÓGICA DE BUSCA (CPF E PETS) ---
+    formBuscaCpf.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cpf = inputCpf.value.replace(/\D/g, "");
+      if (cpf.length !== 11) {
+        alert("CPF deve conter 11 dígitos.");
+        return;
+      }
+
+      resultadoBuscaDiv.style.display = "none";
+      listaPetsUl.innerHTML = "";
+      donoEncontrado = null;
+
+      try {
+        // 1. Buscar o Dono
+        const resDono = await fetch(`/api/pessoas/cpf/${cpf}`);
+        if (resDono.status === 404) {
+          alert("Nenhum dono encontrado com este CPF.");
+          return;
+        }
+        if (!resDono.ok) {
+          alert("Erro ao buscar dono.");
+          return;
+        }
+
+        donoEncontrado = await resDono.json();
+        nomeDonoSpan.textContent = donoEncontrado.nome;
+        resultadoBuscaDiv.style.display = "block";
+
+        // 2. Buscar os Pets do Dono
+        carregarPetsDoDono(donoEncontrado.idPessoa);
+      } catch (error) {
+        console.error("Erro na busca por CPF:", error);
+        alert("Erro de rede ao buscar dono.");
+      }
+    });
+
+    // (Função atualizada para mostrar o badge)
+    async function carregarPetsDoDono(idDono) {
+      try {
+        // Esta API agora retorna o 'status' graças à mudança no PetDAO
+        const resPets = await fetch(`/api/pets/dono/${idDono}`);
+        if (!resPets.ok) {
+          alert("Erro ao carregar os pets deste dono.");
+          return;
+        }
+
+        const pets = await resPets.json();
+        listaPetsUl.innerHTML = "";
+
+        if (pets.length === 0) {
+          msgSemPets.style.display = "block";
+        } else {
+          msgSemPets.style.display = "none";
+          pets.forEach((pet) => {
+            // Adiciona o badge de status se pet.status existir
+            const statusBadge = pet.status
+              ? `<span class="status-badge">Animal de Serviço (${pet.status})</span>`
+              : "";
+
+            listaPetsUl.innerHTML += `
+                      <li>
+                          <div class="pet-info">
+                              <span>${pet.nome}</span> (${pet.especie} - ${
+              pet.raca || "SRD"
+            })
+                              ${statusBadge}
+                          </div>
+                          <div class="pet-actions">
+                              <button class="btn-gerenciar-status"
+                                      onclick="abrirModalStatus(${
+                                        pet.idPet
+                                      }, '${pet.nome}')">
+                                  Gerenciar Status
+                              </button>
+                              <button onclick="abrirModalCredencial(${
+                                pet.idPet
+                              }, '${pet.nome}')">
+                                  Emitir Credencial
+                              </button>
+                          </div>
+                      </li>
+                  `;
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar pets:", error);
+        alert("Erro de rede ao carregar pets.");
+      }
+    }
+
+    // --- 6. LÓGICA DO MODAL DE CREDENCIAL ---
+    function abrirModalCredencial(idPet, nomePet) {
+      modalTituloCredencial.textContent = `Emitir Credencial para: ${nomePet}`;
+      hiddenIdPet.value = idPet;
+      hiddenIdTreinador.value = usuarioLogado.idPessoa;
+      formCredencial.reset();
+      inputDataEmissao.valueAsDate = new Date();
+      modalCredencial.style.display = "flex";
+    }
+
+    btnCancelarCredencial.addEventListener("click", () => {
+      modalCredencial.style.display = "none";
+    });
+
+    formCredencial.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const habilidadesSelecionadas = [];
+      const checkboxes = document.querySelectorAll(
+        "#habilidades-checklist input:checked"
+      );
+      checkboxes.forEach((cb) => {
+        habilidadesSelecionadas.push({ idHabilidade: parseInt(cb.value) });
+      });
+      if (habilidadesSelecionadas.length === 0) {
+        alert("Você deve selecionar pelo menos uma habilidade.");
+        return;
+      }
+
+      const novaCredencial = {
+        idAnimalServico: parseInt(hiddenIdPet.value),
+        idTreinador: parseInt(hiddenIdTreinador.value),
+        dataEmissao: inputDataEmissao.value,
+        dataValidade: inputDataValidade.value || null,
+        habilidades: habilidadesSelecionadas,
+      };
+
+      try {
+        const response = await fetch("/api/credenciais", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(novaCredencial),
+        });
+
+        if (response.status === 201) {
+          alert("Credencial de Serviço salva com sucesso!");
+          modalCredencial.style.display = "none";
+        } else {
+          // Erro: Se o pet não for Animal de Serviço, vai falhar.
+          // O Treinador agora deve usar o botão "Gerenciar Status" primeiro.
+          alert(
+            "Erro ao salvar credencial. Verifique se este pet já foi promovido para Animal de Serviço (use o botão 'Gerenciar Status')."
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao salvar credencial:", error);
+        alert("Erro de rede ao salvar credencial.");
+      }
+    });
+
+    // --- 7. LÓGICA DO MODAL DE STATUS (Atualizada para pré-preencher) ---
+    async function abrirModalStatus(idPet, nomePet) {
+      modalTituloStatus.textContent = `Gerenciar Status de Serviço para: ${nomePet}`;
+      statusIdPet.value = idPet;
+      formStatusServico.reset();
+
+      try {
+        // Chama a API que agora traz os dados (graças ao PetDAO)
+        const response = await fetch(`/api/pets/${idPet}`);
+        if (response.ok) {
+          const pet = await response.json();
+
+          // Pré-preenche se os dados existirem
+          if (pet.status) {
+            console.log("Pet já é um animal de serviço, preenchendo status.");
+            statusPetRegistro.value = pet.numeroRegistroOficial || "";
+            statusPetStatus.value = pet.status;
+          } else {
+            console.log("Pet não é animal de serviço, modal em branco.");
+          }
+        }
+      } catch (e) {
+        console.error("Erro ao pré-carregar status do pet:", e);
+      }
+
+      modalStatusServico.style.display = "flex";
+    }
+
+    btnCancelarStatus.addEventListener("click", () => {
+      modalStatusServico.style.display = "none";
+    });
+
+    formStatusServico.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // Usa a API /api/pets/promover
+      const dadosPromocao = {
+        idPet: parseInt(statusIdPet.value),
+        numeroRegistroOficial: statusPetRegistro.value || null,
+        status: statusPetStatus.value,
+      };
+
+      try {
+        const response = await fetch(`/api/pets/promover`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dadosPromocao),
+        });
+
+        if (response.ok) {
+          alert("Status de Animal de Serviço salvo com sucesso!");
+          modalStatusServico.style.display = "none";
+          // Recarrega a lista de pets para mostrar o badge atualizado
+          if (donoEncontrado) {
+            carregarPetsDoDono(donoEncontrado.idPessoa);
+          }
+        } else {
+          alert("Erro ao salvar o status de serviço.");
+        }
+      } catch (error) {
+        console.error("Erro de rede (POST /promover):", error);
+        alert("Erro de conexão ao salvar status.");
+      }
+    });
+
+    // --- 8. NAVEGAÇÃO (PERFIL E LOGOUT) ---
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      alert("Você saiu.");
+      window.location.href = "login.html";
+    });
+    btnPerfil.addEventListener("click", () => {
+      window.location.href = "perfil.html";
+    });
+</script>
+</body>
+</html>

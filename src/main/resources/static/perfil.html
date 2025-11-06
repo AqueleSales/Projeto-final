@@ -1,0 +1,339 @@
+perfil.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meu Perfil | Assistente Pet</title>
+    <link rel="stylesheet" href="css/login.css" />
+    <style>
+        body {
+          font-family: "Poppins", Arial, sans-serif;
+          background: #f3f6fc;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+
+        /* ====== Card ====== */
+        .card {
+          background: #fff;
+          width: 95%;
+          max-width: 480px;
+          padding: 32px;
+          border-radius: 14px;
+          box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.1);
+          animation: fadeIn 0.3s;
+        }
+
+        /* Fade suave */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* ====== Logo Area ====== */
+        .logo-area {
+          text-align: center;
+          margin-bottom: 22px;
+        }
+
+        .logo-area h1 {
+          font-size: 26px;
+          margin: 0;
+          font-weight: 600;
+          color: #24345f;
+        }
+
+        .logo-area h1 span {
+          color: #1976d2;
+          font-weight: 700;
+        }
+
+        .logo-area p {
+          margin-top: 4px;
+          color: #72809d;
+          font-size: 14px;
+        }
+
+        /* ====== Inputs ====== */
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 16px;
+        }
+
+        .input-group label {
+          font-size: 14px;
+          font-weight: 500;
+          color: #2a2a2a;
+        }
+
+        .input-group input {
+          border: 1px solid #d0d6e4;
+          border-radius: 8px;
+          padding: 10px 12px;
+          font-size: 15px;
+          transition: 0.15s;
+          background: #fff;
+        }
+
+        .input-group input:focus {
+          border-color: #1976d2;
+          outline: none;
+          box-shadow: 0px 0px 4px rgba(25, 118, 210, 0.3);
+        }
+
+        /* Inputs desabilitados */
+        .input-group input:disabled {
+          background: #e7e9ee;
+          color: #777;
+          cursor: not-allowed;
+        }
+
+        /* ====== Botões ====== */
+        .btn {
+          width: 100%;
+          background: #1976d2;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 0;
+          font-size: 15px;
+          font-weight: 600;
+          color: #fff;
+          cursor: pointer;
+          transition: 0.15s;
+          margin-top: 4px;
+        }
+
+        .btn:hover {
+          background: #145ca6;
+        }
+
+        /* Botão Voltar */
+        .btn-voltar {
+          background: #6c757d;
+        }
+
+        .btn-voltar:hover {
+          background: #575e63;
+        }
+
+        /* ====== Responsividade ====== */
+        @media (max-width: 480px) {
+          .card {
+            padding: 24px;
+          }
+          .logo-area h1 {
+            font-size: 22px;
+          }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo-area">
+        <h1>Meu <span>Perfil</span></h1>
+        <p>Atualize seus dados cadastrais</p>
+    </div>
+
+    <form id="form-perfil">
+        <div class="input-group">
+            <label for="perfil-nome">Nome Completo *</label>
+            <input type="text" id="perfil-nome" required />
+        </div>
+        <div class="input-group">
+            <label for="perfil-email">Email *</label>
+            <input type="email" id="perfil-email" required />
+        </div>
+        <div class="input-group">
+            <label for="perfil-cpf">CPF (Não pode ser alterado)</label>
+            <input type="text" id="perfil-cpf" disabled />
+        </div>
+
+        <div class="input-group" id="campo-crmv" style="display: none">
+            <label for="perfil-crmv">CRMV (Não pode ser alterado)</label>
+            <input type="text" id="perfil-crmv" disabled />
+        </div>
+
+        <div class="input-group">
+            <label for="perfil-telefone1">Telefone 1</label>
+            <input
+                    type="tel"
+                    id="perfil-telefone1"
+                    placeholder="(00) 00000-0000"
+                    maxlength="15"
+            />
+        </div>
+        <div class="input-group">
+            <label for="perfil-telefone2">Telefone 2 (Opcional)</label>
+            <input
+                    type="tel"
+                    id="perfil-telefone2"
+                    placeholder="(00) 00000-0000"
+                    maxlength="15"
+            />
+        </div>
+
+        <button type="submit" class="btn">Salvar Alterações</button>
+        <button type="button" class="btn btn-voltar" id="btn-voltar">
+            Voltar
+        </button>
+    </form>
+</div>
+
+<script>
+    // --- 1. PEGAR USUÁRIO E ELEMENTOS ---
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+
+    // Elementos do Formulário
+    const formPerfil = document.getElementById("form-perfil");
+    const nomeInput = document.getElementById("perfil-nome");
+    const emailInput = document.getElementById("perfil-email");
+    const cpfInput = document.getElementById("perfil-cpf");
+    const telefone1Input = document.getElementById("perfil-telefone1");
+    const telefone2Input = document.getElementById("perfil-telefone2");
+    const btnVoltar = document.getElementById("btn-voltar");
+
+    // Elementos Condicionais (Veterinário)
+    const campoCrmv = document.getElementById("campo-crmv");
+    const crmvInput = document.getElementById("perfil-crmv");
+
+    // --- 2. VERIFICAR SEGURANÇA E CARREGAR DADOS ---
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!usuarioLogado) {
+        alert("Você precisa estar logado para ver seu perfil.");
+        window.location.href = "login.html";
+        return; // Para o script
+      }
+
+      // Preenche os dados básicos (Pessoa)
+      nomeInput.value = usuarioLogado.nome;
+      emailInput.value = usuarioLogado.email;
+      cpfInput.value = formatarCPF(usuarioLogado.cpf);
+
+      // Preenche os telefones
+      // NOTA: Isso só vai funcionar DEPOIS que você atualizar o PessoaDAO.java
+      if (usuarioLogado.telefones) {
+        telefone1Input.value = formatarTelefone(
+          usuarioLogado.telefones[0] || ""
+        );
+        telefone2Input.value = formatarTelefone(
+          usuarioLogado.telefones[1] || ""
+        );
+      } else {
+        console.warn(
+          "Telefones não encontrados no localStorage. Faça o Passo 7 (PessoaDAO) e relogue."
+        );
+      }
+
+      // Se for Veterinário, mostra o campo CRMV
+      if (usuarioLogado.role === "VETERINARIO") {
+        campoCrmv.style.display = "block";
+        // NOTA: O CRMV não foi carregado no login.
+        // Para exibi-lo, precisaríamos fazer uma nova chamada (GET /api/veterinarios/{id})
+        // Por enquanto, deixamos desabilitado.
+        crmvInput.value = "Carregamento pendente";
+      }
+    });
+
+    // --- 3. AÇÃO DE SALVAR O PERFIL (UPDATE) ---
+    formPerfil.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const telefonesAtualizados = [
+        telefone1Input.value.replace(/\D/g, ""), // Salva só os números
+        telefone2Input.value.replace(/\D/g, ""),
+      ].filter((t) => t); // Remove strings vazias
+
+      // Monta o objeto que a API espera
+      // (Espalhamos o 'usuarioLogado' para manter ID, CPF, Role, etc.)
+      const dadosAtualizados = {
+        ...usuarioLogado,
+        nome: nomeInput.value,
+        email: emailInput.value,
+        telefones: telefonesAtualizados,
+      };
+
+      try {
+        // Chama o PessoaController.atualizarPessoa
+        const response = await fetch(
+          `/api/pessoas/${usuarioLogado.idPessoa}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosAtualizados),
+          }
+        );
+
+        if (response.ok) {
+          alert("Perfil atualizado com sucesso!");
+
+          // IMPORTANTE: Atualiza o localStorage com os novos dados!
+          localStorage.setItem(
+            "usuarioLogado",
+            JSON.stringify(dadosAtualizados)
+          );
+
+          // Redireciona de volta para o dashboard correto
+          voltarParaDashboard();
+        } else {
+          alert("Erro ao atualizar o perfil.");
+        }
+      } catch (error) {
+        console.error("Erro de rede (PUT):", error);
+        alert("Erro de conexão ao salvar.");
+      }
+    });
+
+    // --- 4. FUNÇÕES AUXILIARES (Voltar e Máscaras) ---
+    function voltarParaDashboard() {
+      if (usuarioLogado.role === "DONO") {
+        window.location.href = "dashboard.html";
+      } else if (usuarioLogado.role === "VETERINARIO") {
+        window.location.href = "dashboard-vet.html";
+      } else {
+        window.location.href = "login.html"; // Fallback
+      }
+    }
+
+    btnVoltar.addEventListener("click", voltarParaDashboard);
+
+    // Funções de Máscara (copiadas do registro)
+    function formatarCPF(cpf) {
+      if (!cpf) return "";
+      const value = cpf.replace(/\D/g, "");
+      return value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    }
+
+    function formatarTelefone(tel) {
+      if (!tel) return "";
+      const value = tel.replace(/\D/g, "");
+      if (value.length > 10) {
+        return value.replace(/^(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+      } else if (value.length > 2) {
+        return value.replace(/^(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+      } else {
+        return tel;
+      }
+    }
+
+    telefone1Input.addEventListener("input", (e) => {
+      e.target.value = formatarTelefone(e.target.value);
+    });
+    telefone2Input.addEventListener("input", (e) => {
+      e.target.value = formatarTelefone(e.target.value);
+    });
+</script>
+</body>
+</html>

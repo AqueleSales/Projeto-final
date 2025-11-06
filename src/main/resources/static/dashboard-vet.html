@@ -1,0 +1,613 @@
+dashboard-vet.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Veterinário | Assistente Pet</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <style>
+        /* =============================
+     RESET & BASE
+  ============================= */
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+          background: #ecf1f4;
+          min-height: 100vh;
+        }
+
+        /* =============================
+     HEADER
+  ============================= */
+        header {
+          background: #3498db;
+          display: flex;
+          align-items: center;
+          padding: 1rem 2rem;
+          gap: 10px;
+          border-radius: 0 0 12px 12px;
+        }
+
+        header h1 {
+          color: white;
+          font-size: 1.4rem;
+          font-weight: 600;
+        }
+
+        /* Botões do header */
+        .new-pet-btn {
+          background: #2980b9;
+          border: none;
+          padding: 10px 18px;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          color: #fff;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+
+        .new-pet-btn:hover {
+          filter: brightness(0.9);
+        }
+
+        /* =============================
+     CONTAINER
+  ============================= */
+        .container {
+          width: 95%;
+          max-width: 750px;
+          background: #fff;
+          padding: 2rem;
+          border-radius: 12px;
+          margin: 2rem auto;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+          animation: fadeIn 0.35s ease;
+        }
+
+        .container h2 {
+          text-align: center;
+          margin-bottom: 1rem;
+          color: #3498db;
+        }
+
+        /* =============================
+     BUSCA CPF
+  ============================= */
+        #form-busca-cpf {
+          display: flex;
+          gap: 12px;
+        }
+
+        #form-busca-cpf input {
+          flex: 1;
+          padding: 12px;
+          border: 1.8px solid #dcdcdc;
+          border-radius: 8px;
+          font-size: 1rem;
+        }
+
+        #form-busca-cpf button {
+          background: #3498db;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 20px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: 0.15s ease;
+        }
+        #form-busca-cpf button:hover {
+          filter: brightness(0.92);
+        }
+
+        /* =============================
+     LISTA PETS
+  ============================= */
+        #lista-pets-dono {
+          list-style: none;
+          margin-top: 15px;
+        }
+
+        #lista-pets-dono li {
+          background: #f9f9f9;
+          padding: 15px;
+          border-radius: 8px;
+          border: 1.5px solid #e7e7e7;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+
+        #lista-pets-dono .pet-info {
+          font-size: 1.05rem;
+        }
+        #lista-pets-dono .pet-info span {
+          font-weight: 600;
+        }
+
+        #lista-pets-dono button {
+          background: #28a745;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 0.95rem;
+          border: none;
+          cursor: pointer;
+          color: #fff;
+          transition: 0.2s;
+        }
+        #lista-pets-dono button:hover {
+          background: #1e7e34;
+        }
+
+        /* =============================
+     MODAL VACINA
+  ============================= */
+        .modal {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+        }
+
+        .modal-content {
+          background: #fff;
+          width: 95%;
+          max-width: 500px;
+          padding: 25px;
+          border-radius: 12px;
+          animation: scaleUp 0.25s ease;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-content h3 {
+          margin-bottom: 1rem;
+          font-size: 1.25rem;
+          text-align: center;
+          color: #28a745;
+        }
+
+        .modal-form {
+          display: grid;
+          gap: 15px;
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .modal-form .full-width {
+          grid-column: span 2;
+        }
+
+        .modal-form label {
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin-bottom: 4px;
+          display: block;
+        }
+
+        .modal-form input,
+        .modal-form select {
+          width: 100%;
+          border: 1.8px solid #dcdcdc;
+          padding: 10px;
+          border-radius: 8px;
+          font-size: 1rem;
+        }
+
+        /* =============================
+     BOTÕES MODAL
+  ============================= */
+        .modal-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 1rem;
+        }
+
+        .modal-actions button {
+          flex: 1;
+          padding: 12px;
+          border: none;
+          border-radius: 6px;
+          color: white;
+          cursor: pointer;
+          font-weight: 600;
+          transition: 0.2s;
+        }
+
+        #btn-salvar-vacina {
+          background: #28a745;
+        }
+        #btn-salvar-vacina:hover {
+          background: #1e7e34;
+        }
+        #btn-cancelar-vacina {
+          background: #6c757d;
+        }
+        #btn-cancelar-vacina:hover {
+          background: #555;
+        }
+
+        /* =============================
+     ANIMAÇÕES
+  ============================= */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes scaleUp {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1 id="vet-nome">Dashboard Veterinário</h1>
+
+    <a
+            href="admin-vacinas.html"
+            class="new-pet-btn"
+            style="background-color: #f39c12; margin-left: auto"
+    >Gerenciar Vacinas</a
+    >
+    <a
+            href="admin-clinicas.html"
+            class="new-pet-btn"
+            style="background-color: #f39c12; margin-left: 10px"
+    >Gerenciar Clínicas</a
+    >
+
+    <button
+            class="new-pet-btn"
+            id="btn-perfil"
+            style="background-color: #007bff; margin-left: 10px"
+    >
+        Meu Perfil
+    </button>
+    <button
+            class="new-pet-btn"
+            id="btn-logout"
+            style="background-color: #aaa; margin-left: 10px"
+    >
+        Sair
+    </button>
+</header>
+
+<main>
+    <div class="container">
+        <h2>Buscar Dono por CPF</h2>
+        <form id="form-busca-cpf">
+            <input
+                    type="text"
+                    id="input-cpf"
+                    placeholder="Digite o CPF do dono (só números)"
+                    maxlength="11"
+                    required
+            />
+            <button type="submit">Buscar</button>
+        </form>
+    </div>
+
+    <div class="container" id="resultado-busca">
+        <h2>Resultados para: <span id="nome-dono-encontrado"></span></h2>
+        <ul id="lista-pets-dono"></ul>
+        <p id="msg-sem-pets" style="display: none">
+            Este dono não possui pets cadastrados.
+        </p>
+    </div>
+</main>
+
+<div id="modal-vacina" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-titulo-vacina">Registrar Vacina para [Nome do Pet]</h3>
+
+        <form id="form-vacina" class="modal-form">
+            <input type="hidden" id="vacina-id-pet" />
+            <input type="hidden" id="vacina-id-veterinario" />
+
+            <div class="full-width">
+                <label for="select-vacina">Vacina *</label>
+                <select id="select-vacina" required>
+                    <option value="">Carregando vacinas...</option>
+                </select>
+            </div>
+
+            <div class="full-width">
+                <label for="select-clinica">Clínica *</label>
+                <select id="select-clinica" required>
+                    <option value="">Carregando clínicas...</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="vacina-data">Data da Aplicação *</label>
+                <input type="date" id="vacina-data" required />
+            </div>
+
+            <div>
+                <label for="vacina-lote">Lote</label>
+                <input
+                        type="text"
+                        id="vacina-lote"
+                        placeholder="Lote do fabricante"
+                />
+            </div>
+
+            <div class="full-width">
+                <label for="vacina-prox-dose">Próxima Dose (Opcional)</label>
+                <input type="date" id="vacina-prox-dose" />
+            </div>
+
+            <div class="modal-actions full-width">
+                <button type="button" id="btn-cancelar-vacina">Cancelar</button>
+                <button type="submit" id="btn-salvar-vacina">
+                    Salvar Certificado
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // --- 1. VARIÁVEIS GLOBAIS E CACHE ---
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+    let donoEncontrado = null; // Guarda o dono (pessoa) que foi buscado
+    let cacheVacinas = []; // Guarda a lista de vacinas
+    let cacheClinicas = []; // Guarda a lista de clínicas
+
+    // --- 2. ELEMENTOS DO DOM ---
+    const vetNome = document.getElementById("vet-nome");
+    const btnPerfil = document.getElementById("btn-perfil");
+    const btnLogout = document.getElementById("btn-logout");
+
+    // Busca
+    const formBuscaCpf = document.getElementById("form-busca-cpf");
+    const inputCpf = document.getElementById("input-cpf");
+    const resultadoBuscaDiv = document.getElementById("resultado-busca");
+    const nomeDonoSpan = document.getElementById("nome-dono-encontrado");
+    const listaPetsUl = document.getElementById("lista-pets-dono");
+    const msgSemPets = document.getElementById("msg-sem-pets");
+
+    // Modal
+    const modalVacina = document.getElementById("modal-vacina");
+    const modalTituloVacina = document.getElementById("modal-titulo-vacina");
+    const formVacina = document.getElementById("form-vacina");
+    const btnCancelarVacina = document.getElementById("btn-cancelar-vacina");
+
+    // Campos do Modal
+    const hiddenIdPet = document.getElementById("vacina-id-pet");
+    const hiddenIdVet = document.getElementById("vacina-id-veterinario");
+    const selectVacina = document.getElementById("select-vacina");
+    const selectClinica = document.getElementById("select-clinica");
+    const inputData = document.getElementById("vacina-data");
+    const inputLote = document.getElementById("vacina-lote");
+    const inputProxDose = document.getElementById("vacina-prox-dose");
+
+    // --- 3. INICIALIZAÇÃO DA PÁGINA ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Segurança: Verifica se é um veterinário
+      if (!usuarioLogado || usuarioLogado.role !== "VETERINARIO") {
+        alert("Acesso negado. Você precisa ser um veterinário.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Preenche o nome no cabeçalho
+      vetNome.textContent = `Dr(a). ${usuarioLogado.nome.split(" ")[0]}`; // Mostra só o primeiro nome
+
+      // Carrega os dados necessários para o modal (vacinas e clínicas)
+      carregarDadosParaModal();
+    });
+
+    // --- 4. FUNÇÕES DE CARREGAMENTO (VACINAS E CLÍNICAS) ---
+    async function carregarDadosParaModal() {
+      try {
+        // Carrega Vacinas
+        const resVacinas = await fetch("/api/vacinas");
+        if (resVacinas.ok) {
+          cacheVacinas = await resVacinas.json();
+          selectVacina.innerHTML =
+            '<option value="">Selecione uma vacina</option>'; // Limpa
+          cacheVacinas.forEach((v) => {
+            selectVacina.innerHTML += `<option value="${v.idVacina}">${
+              v.nomeVacina
+            } (${v.tipo || "N/A"})</option>`;
+          });
+        } else {
+          selectVacina.innerHTML =
+            '<option value="">Erro ao carregar vacinas</option>';
+        }
+
+        // Carrega Clínicas
+        const resClinicas = await fetch("/api/clinicas");
+        if (resClinicas.ok) {
+          cacheClinicas = await resClinicas.json();
+          selectClinica.innerHTML =
+            '<option value="">Selecione uma clínica</option>'; // Limpa
+          cacheClinicas.forEach((c) => {
+            selectClinica.innerHTML += `<option value="${c.idClinica}">${c.nome}</option>`;
+          });
+        } else {
+          selectClinica.innerHTML =
+            '<option value="">Erro ao carregar clínicas</option>';
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do modal:", error);
+        alert("Erro de rede ao carregar vacinas ou clínicas.");
+      }
+    }
+
+    // --- 5. LÓGICA DE BUSCA (CPF E PETS) ---
+    formBuscaCpf.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cpf = inputCpf.value.replace(/\D/g, ""); // Remove não-números
+      if (cpf.length !== 11) {
+        alert("CPF deve conter 11 dígitos.");
+        return;
+      }
+
+      // Limpa resultados anteriores
+      resultadoBuscaDiv.style.display = "none";
+      listaPetsUl.innerHTML = "";
+      donoEncontrado = null;
+
+      try {
+        // 1. Buscar o Dono (Pessoa) pelo CPF
+        const resDono = await fetch(`/api/pessoas/cpf/${cpf}`);
+
+        if (resDono.status === 404) {
+          alert("Nenhum dono encontrado com este CPF.");
+          return;
+        }
+        if (!resDono.ok) {
+          alert("Erro ao buscar dono.");
+          return;
+        }
+
+        donoEncontrado = await resDono.json();
+        nomeDonoSpan.textContent = donoEncontrado.nome;
+        resultadoBuscaDiv.style.display = "block"; // Mostra a área de resultados
+
+        // 2. Buscar os Pets daquele Dono
+        carregarPetsDoDono(donoEncontrado.idPessoa);
+      } catch (error) {
+        console.error("Erro na busca por CPF:", error);
+        alert("Erro de rede ao buscar dono.");
+      }
+    });
+
+    async function carregarPetsDoDono(idDono) {
+      try {
+        const resPets = await fetch(`/api/pets/dono/${idDono}`);
+        if (!resPets.ok) {
+          alert("Erro ao carregar os pets deste dono.");
+          return;
+        }
+
+        const pets = await resPets.json();
+        listaPetsUl.innerHTML = ""; // Limpa lista
+
+        if (pets.length === 0) {
+          msgSemPets.style.display = "block";
+        } else {
+          msgSemPets.style.display = "none";
+          pets.forEach((pet) => {
+            listaPetsUl.innerHTML += `
+                      <li>
+                          <div class="pet-info">
+                              <span>${pet.nome}</span> (${pet.especie} - ${
+              pet.raca || "SRD"
+            })
+                          </div>
+                          <button onclick="abrirModalVacinacao(${
+                            pet.idPet
+                          }, '${pet.nome}')">
+                              Registrar Vacina
+                          </button>
+                      </li>
+                  `;
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar pets:", error);
+        alert("Erro de rede ao carregar pets.");
+      }
+    }
+
+    // --- 6. LÓGICA DO MODAL DE VACINAÇÃO ---
+    function abrirModalVacinacao(idPet, nomePet) {
+      // Preenche os dados do pet e do veterinário no formulário
+      modalTituloVacina.textContent = `Registrar Vacina para: ${nomePet}`;
+      hiddenIdPet.value = idPet;
+      hiddenIdVet.value = usuarioLogado.idPessoa; // O ID do Vet logado
+
+      // Limpa campos de formulário
+      formVacina.reset();
+      inputData.valueAsDate = new Date(); // Pré-preenche com a data de hoje
+
+      // Mostra o modal
+      modalVacina.style.display = "flex";
+    }
+
+    // Fechar modal
+    btnCancelarVacina.addEventListener("click", () => {
+      modalVacina.style.display = "none";
+    });
+
+    // Salvar Certificado de Vacina
+    formVacina.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // Monta o objeto CertificadoVacina
+      const novoCertificado = {
+        idPet: parseInt(hiddenIdPet.value),
+        idVeterinario: parseInt(hiddenIdVet.value),
+        idVacina: parseInt(selectVacina.value),
+        idClinica: parseInt(selectClinica.value),
+        dataAplicacao: inputData.value,
+        lote: inputLote.value || null,
+        proximaDose: inputProxDose.value || null,
+      };
+
+      // Validação simples
+      if (!novoCertificado.idVacina || !novoCertificado.idClinica) {
+        alert("Por favor, selecione a vacina e a clínica.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/certificados", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(novoCertificado),
+        });
+
+        if (response.status === 201) {
+          // CREATED
+          alert("Certificado de vacina salvo com sucesso!");
+          modalVacina.style.display = "none"; // Fecha o modal
+        } else {
+          alert("Erro ao salvar certificado. Verifique os dados.");
+        }
+      } catch (error) {
+        console.error("Erro ao salvar certificado:", error);
+        alert("Erro de rede ao salvar certificado.");
+      }
+    });
+
+    // --- 7. NAVEGAÇÃO (PERFIL E LOGOUT) ---
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      alert("Você saiu.");
+      window.location.href = "login.html";
+    });
+
+    btnPerfil.addEventListener("click", () => {
+      window.location.href = "perfil.html";
+    });
+</script>
+</body>
+</html>

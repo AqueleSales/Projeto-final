@@ -4,8 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- O nome do seu projeto, usado pelo Spring Boot -->
-    <groupId>br.com.assistente.pet</groupId>
+    <groupId>AssistentePet</groupId>
     <artifactId>meu-assistente-pet-api</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -14,11 +13,9 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
-        <!-- Define a versão do Spring Boot para todo o projeto -->
         <spring-boot.version>3.2.0</spring-boot.version>
     </properties>
 
-    <!-- Gerenciamento centralizado de versões do Spring Boot -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -32,23 +29,18 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Pacote principal para criar APIs Web com Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <!-- Pacote para se conectar a bancos de dados usando JDBC (JdbcTemplate) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
-
-        <!-- Conector do MySQL (versão segura e atualizada) -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
@@ -58,12 +50,7 @@
     </dependencies>
 
     <build>
-        <!-- A seção <resources> foi removida.
-             Vamos confiar na configuração padrão do Maven
-             e na marcação da pasta "Resources Root" (azul) do IntelliJ.
-        -->
         <plugins>
-            <!-- Plugin principal do Spring Boot para "empacotar" a aplicação -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -76,12 +63,9 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!-- Define a classe que o Spring deve rodar (a que criamos) -->
-                    <mainClass>br.com.assistente.pet.ApiApplication</mainClass>
+                    <mainClass>AssistentePet.ApiApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
 </project>
-

@@ -1,0 +1,187 @@
+historico-vacinas.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Histórico de Vacinas | Assistente Pet</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <style>
+        body {
+          padding: 2rem;
+          background-color: #f0f2f5;
+        }
+        .container {
+          max-width: 900px;
+          margin: 2rem auto;
+          background: #fff;
+          padding: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .container h1 {
+          color: #e85c0d;
+        } /* Cor laranja do Dono */
+        .btn-voltar {
+          background: #6c757d;
+          color: white;
+          padding: 10px 15px;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: none; /* Para o <a> */
+          display: inline-block;
+          margin-bottom: 1.5rem;
+        }
+
+        /* Tabela do Histórico */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 1rem;
+        }
+        th,
+        td {
+          border: 1px solid #ddd;
+          padding: 12px;
+          text-align: left;
+        }
+        th {
+          background-color: #f9f9f9;
+        }
+        #tabela-historico-corpo tr:nth-child(even) {
+          background-color: #fcfcfc;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="dashboard.html" class="btn-voltar"
+    >&larr; Voltar para Meus Pets</a
+    >
+    <h1 id="pet-nome-titulo">Histórico de Vacinas</h1>
+    <p>
+        Abaixo estão todos os certificados de vacinação registrados para este
+        pet.
+    </p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Data Aplicação</th>
+            <th>Lote</th>
+            <th>Próxima Dose</th>
+
+            <th>ID da Vacina</th>
+            <th>ID da Clínica</th>
+            <th>ID do Veterinário</th>
+        </tr>
+        </thead>
+        <tbody id="tabela-historico-corpo"></tbody>
+    </table>
+    <p id="msg-sem-vacinas" style="display: none; margin-top: 1rem">
+        Nenhuma vacina registrada para este pet.
+    </p>
+</div>
+
+<script>
+    // --- 1. PEGAR USUÁRIO E PET ID ---
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+    const urlParams = new URLSearchParams(window.location.search);
+    const petId = urlParams.get("id");
+
+    // --- 2. ELEMENTOS DO DOM ---
+    const tabelaCorpo = document.getElementById("tabela-historico-corpo");
+    const msgSemVacinas = document.getElementById("msg-sem-vacinas");
+    const petNomeTitulo = document.getElementById("pet-nome-titulo");
+
+    // --- 3. INICIALIZAÇÃO E SEGURANÇA ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Segurança
+      if (!usuarioLogado || usuarioLogado.role !== "DONO") {
+        alert("Acesso negado. Faça login como Dono.");
+        window.location.href = "login.html";
+        return;
+      }
+      if (!petId) {
+        alert("ID do pet não encontrado.");
+        window.location.href = "dashboard.html";
+        return;
+      }
+
+      // Carrega o histórico
+      carregarHistorico();
+
+      // (Bônus: Carrega o nome do pet - opcional)
+      carregarNomeDoPet();
+    });
+
+    // --- 4. FUNÇÃO PARA CARREGAR O HISTÓRICO (Onde a mágica acontece) ---
+    async function carregarHistorico() {
+      tabelaCorpo.innerHTML =
+        '<tr><td colspan="6">Carregando histórico...</td></tr>';
+      try {
+        // Chama a API do CertificadoVacinaController
+        const response = await fetch(`/api/certificados/pet/${petId}`);
+        if (!response.ok) {
+          throw new Error("Erro ao buscar histórico.");
+        }
+        const historico = await response.json();
+
+        tabelaCorpo.innerHTML = ""; // Limpa o "Carregando"
+        if (historico.length === 0) {
+          msgSemVacinas.style.display = "block";
+          return;
+        }
+
+        // Cria uma linha na tabela para cada certificado
+        historico.forEach((cert) => {
+          tabelaCorpo.innerHTML += `
+                  <tr>
+                      <td>${formatarData(cert.dataAplicacao)}</td>
+                      <td>${cert.lote || "N/A"}</td>
+                      <td>${
+                        cert.proximaDose
+                          ? formatarData(cert.proximaDose)
+                          : "N/A"
+                      }</td>
+
+                      <td>${cert.idVacina}</td>
+                      <td>${cert.idClinica}</td>
+                      <td>${cert.idVeterinario}</td>
+                  </tr>
+              `;
+        });
+      } catch (error) {
+        console.error(error);
+        tabelaCorpo.innerHTML =
+          '<tr><td colspan="6">Erro ao carregar o histórico.</td></tr>';
+      }
+    }
+
+    // --- 5. FUNÇÕES AUXILIARES ---
+
+    // (Opcional: Busca o nome do pet para o título)
+    async function carregarNomeDoPet() {
+      try {
+        const response = await fetch(`/api/pets/${petId}`);
+        if (response.ok) {
+          const pet = await response.json();
+          petNomeTitulo.textContent = `Histórico de: ${pet.nome}`;
+        }
+      } catch (e) {
+        /* Não faz nada se falhar */
+      }
+    }
+
+    // (Formata a data de 'AAAA-MM-DD' para 'DD/MM/AAAA')
+    function formatarData(dataISO) {
+      if (!dataISO) return "N/A";
+      const [ano, mes, dia] = dataISO.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+</script>
+</body>
+</html>
