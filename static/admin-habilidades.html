@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin | Gerenciar Habilidades</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <style>
+        body {
+          padding: 2rem;
+          background-color: #f0f2f5;
+        }
+        .container {
+          background: #fff;
+          padding: 2.5rem;
+          max-width: 900px;
+          margin: 2rem auto;
+          border-radius: 18px;
+          box-shadow: 0px 0px 15px #0000001a;
+        }
+        /* Cor verde para habilidades (igual ao Treinador) */
+        .container h1 {
+          color: #2ecc71;
+        }
+
+        /* Estilos para o formulário */
+        .form-admin {
+          display: grid;
+          grid-template-columns: 1fr; /* Apenas 1 coluna */
+          gap: 1rem;
+          margin-top: 1.5rem;
+        }
+        .form-admin .input-group {
+          margin: 0;
+        }
+        .form-admin label {
+          font-weight: 600;
+          color: #333;
+          display: block;
+          margin-bottom: 5px;
+        }
+        .form-admin input {
+          width: 100%;
+          padding: 12px;
+          border-radius: 8px;
+          border: 2px solid #ccc;
+          outline: none;
+          box-sizing: border-box;
+        }
+        .btn-salvar {
+          background: #28a745;
+          color: white;
+          padding: 12px;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .btn-cancelar {
+          background: #6c757d;
+          color: white;
+          padding: 12px;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: none; /* Começa escondido */
+        }
+
+        /* Estilos para a tabela */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 2rem;
+        }
+        th,
+        td {
+          border: 1px solid #ddd;
+          padding: 12px;
+          text-align: left;
+        }
+        th {
+          background-color: #f2f2f2;
+        }
+        .btn-acao {
+          padding: 5px 10px;
+          border: none;
+          border-radius: 6px;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+          margin-right: 5px;
+        }
+        .btn-editar {
+          background: #007bff;
+        }
+        .btn-excluir {
+          background: #dc3545;
+        }
+
+        .nav-link {
+          display: inline-block;
+          margin-bottom: 1rem;
+          font-weight: bold;
+          color: #3498db;
+          text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="dashboard-treinador.html" class="nav-link"
+    >&larr; Voltar para o Dashboard Treinador</a
+    >
+    <h1 id="form-titulo">Gerenciar Habilidades</h1>
+    <p>Adicione as habilidades que um animal de serviço pode ter.</p>
+
+    <form id="form-habilidade" class="form-admin">
+        <input type="hidden" id="habilidade-id" />
+
+        <div class="input-group">
+            <label for="habilidade-descricao">Descrição da Habilidade *</label>
+            <input
+                    type="text"
+                    id="habilidade-descricao"
+                    placeholder="Ex: Guiar em via pública, Alerta de hipoglicemia"
+                    required
+            />
+        </div>
+
+        <button type="submit" class="btn-salvar">Salvar Habilidade</button>
+        <button type="button" class="btn-cancelar" id="btn-cancelar-edicao">
+            Cancelar Edição
+        </button>
+    </form>
+</div>
+
+<div class="container">
+    <h2>Habilidades Cadastradas</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Descrição</th>
+            <th>Ações</th>
+        </tr>
+        </thead>
+        <tbody id="tabela-habilidades-corpo"></tbody>
+    </table>
+</div>
+
+<script>
+    const formHabilidade = document.getElementById("form-habilidade");
+    const formTitulo = document.getElementById("form-titulo");
+    const habilidadeIdInput = document.getElementById("habilidade-id");
+    const habilidadeDescricaoInput = document.getElementById(
+      "habilidade-descricao"
+    );
+    const btnCancelarEdicao = document.getElementById("btn-cancelar-edicao");
+    const tabelaCorpo = document.getElementById("tabela-habilidades-corpo");
+
+
+    async function carregarHabilidades() {
+      tabelaCorpo.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
+      try {
+        const response = await fetch("/api/habilidades");
+        if (!response.ok) throw new Error("Erro ao buscar habilidades.");
+
+        const habilidades = await response.json();
+        tabelaCorpo.innerHTML = "";
+
+        if (habilidades.length === 0) {
+          tabelaCorpo.innerHTML =
+            '<tr><td colspan="3">Nenhuma habilidade cadastrada.</td></tr>';
+          return;
+        }
+
+        habilidades.forEach((hab) => {
+          tabelaCorpo.innerHTML += `
+                  <tr>
+                      <td>${hab.idHabilidade}</td>
+                      <td>${hab.descricaoHabilidade}</td>
+                      <td>
+                          <button class="btn-acao btn-editar"
+                              onclick="prepararEdicao(${hab.idHabilidade}, '${hab.descricaoHabilidade}')">
+                              Editar
+                          </button>
+                          <button class="btn-acao btn-excluir"
+                              onclick="excluirHabilidade(${hab.idHabilidade})">
+                              Excluir
+                          </button>
+                      </td>
+                  </tr>
+              `;
+        });
+      } catch (error) {
+        console.error(error);
+        tabelaCorpo.innerHTML =
+          '<tr><td colspan="3">Erro ao carregar dados.</td></tr>';
+      }
+    }
+
+
+    formHabilidade.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const id = habilidadeIdInput.value;
+      const descricao = habilidadeDescricaoInput.value;
+
+      if (!descricao) {
+        alert("A descrição é obrigatória.");
+        return;
+      }
+
+      const isEdicao = id !== "";
+      const method = isEdicao ? "PUT" : "POST";
+      const url = isEdicao ? `/api/habilidades/${id}` : "/api/habilidades";
+
+      const habilidade = {
+        descricaoHabilidade: descricao,
+      };
+      if (isEdicao) {
+        habilidade.idHabilidade = parseInt(id);
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(habilidade),
+        });
+
+        if (response.ok || response.status === 201) {
+          alert(
+            `Habilidade ${isEdicao ? "atualizada" : "salva"} com sucesso!`
+          );
+          limparFormulario();
+          carregarHabilidades();
+        } else {
+          alert("Erro ao salvar habilidade.");
+        }
+      } catch (error) {
+        console.error("Erro de rede:", error);
+        alert("Erro de conexão ao salvar.");
+      }
+    });
+
+    function prepararEdicao(id, descricao) {
+      formTitulo.textContent = `Editando Habilidade (ID: ${id})`;
+      habilidadeIdInput.value = id;
+      habilidadeDescricaoInput.value = descricao;
+      btnCancelarEdicao.style.display = "block";
+      window.scrollTo(0, 0);
+    }
+
+
+    async function excluirHabilidade(id) {
+      if (!confirm(`Tem certeza que deseja excluir a habilidade ID ${id}?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/habilidades/${id}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok || response.status === 204) {
+          alert("Habilidade excluída com sucesso!");
+          carregarHabilidades();
+        } else {
+          alert("Erro ao excluir. (Pode estar em uso por uma credencial).");
+        }
+      } catch (error) {
+        console.error("Erro de rede:", error);
+        alert("Erro de conexão ao excluir.");
+      }
+    }
+    function limparFormulario() {
+      formTitulo.textContent = "Gerenciar Habilidades";
+      formHabilidade.reset();
+      habilidadeIdInput.value = "";
+      btnCancelarEdicao.style.display = "none";
+    }
+    btnCancelarEdicao.addEventListener("click", limparFormulario);
+
+    document.addEventListener("DOMContentLoaded", carregarHabilidades);
+</script>
+</body>
+</html>

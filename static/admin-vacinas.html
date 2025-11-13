@@ -1,0 +1,312 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin | Gerenciar Vacinas</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <style>
+        body {
+          padding: 2rem;
+          background-color: #f0f2f5;
+        }
+        .container {
+          background: #fff;
+          padding: 2.5rem;
+          max-width: 900px;
+          margin: 2rem auto;
+          border-radius: 18px;
+          box-shadow: 0px 0px 15px #0000001a;
+        }
+        .container h1 {
+          color: #e85c0d;
+        }
+
+        /* Estilos para o formulário */
+        .form-admin {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          margin-top: 1.5rem;
+        }
+        .form-admin .input-group {
+          margin: 0;
+        }
+        .form-admin label {
+          font-weight: 600;
+          color: #333;
+          display: block;
+          margin-bottom: 5px;
+        }
+        .form-admin input {
+          width: 100%;
+          padding: 12px;
+          border-radius: 8px;
+          border: 2px solid #ccc;
+          outline: none;
+          box-sizing: border-box;
+        }
+        .btn-salvar {
+          background: #28a745;
+          color: white;
+          padding: 12px;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .btn-cancelar {
+          background: #6c757d;
+          color: white;
+          padding: 12px;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: none; /* Começa escondido */
+        }
+
+        /* Estilos para a tabela */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 2rem;
+        }
+        th,
+        td {
+          border: 1px solid #ddd;
+          padding: 12px;
+          text-align: left;
+        }
+        th {
+          background-color: #f2f2f2;
+        }
+        .btn-acao {
+          padding: 5px 10px;
+          border: none;
+          border-radius: 6px;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+          margin-right: 5px;
+        }
+        .btn-editar {
+          background: #007bff;
+        }
+        .btn-excluir {
+          background: #dc3545;
+        }
+
+        .nav-link {
+          display: inline-block;
+          margin-bottom: 1rem;
+          font-weight: bold;
+          color: #3498db;
+          text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="dashboard-vet.html" class="nav-link"
+    >&larr; Voltar para o Dashboard Veterinário</a
+    >
+    <h1 id="form-titulo">Gerenciar Vacinas</h1>
+    <p>Adicione, edite ou remova as vacinas disponíveis no sistema.</p>
+
+    <form id="form-vacina" class="form-admin">
+
+        <input type="hidden" id="vacina-id" />
+
+        <div class="input-group">
+            <label for="vacina-nome">Nome da Vacina *</label>
+            <input
+                    type="text"
+                    id="vacina-nome"
+                    placeholder="Ex: V10 Canina"
+                    required
+            />
+        </div>
+        <div class="input-group">
+            <label for="vacina-tipo">Tipo/Espécie</label>
+            <input type="text" id="vacina-tipo" placeholder="Ex: Canina" />
+        </div>
+
+        <button type="submit" class="btn-salvar">Salvar Vacina</button>
+        <button type="button" class="btn-cancelar" id="btn-cancelar-edicao">
+            Cancelar Edição
+        </button>
+    </form>
+</div>
+
+<div class="container">
+    <h2>Vacinas Cadastradas</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Ações</th>
+        </tr>
+        </thead>
+        <tbody id="tabela-vacinas-corpo">
+        </tbody>
+    </table>
+</div>
+
+<script>
+
+    const formVacina = document.getElementById("form-vacina");
+    const formTitulo = document.getElementById("form-titulo");
+    const vacinaIdInput = document.getElementById("vacina-id");
+    const vacinaNomeInput = document.getElementById("vacina-nome");
+    const vacinaTipoInput = document.getElementById("vacina-tipo");
+    const btnCancelarEdicao = document.getElementById("btn-cancelar-edicao");
+    const tabelaCorpo = document.getElementById("tabela-vacinas-corpo");
+
+
+    async function carregarVacinas() {
+      tabelaCorpo.innerHTML = '<tr><td colspan="4">Carregando...</td></tr>';
+      try {
+        const response = await fetch("/api/vacinas");
+        if (!response.ok) throw new Error("Erro ao buscar vacinas.");
+
+        const vacinas = await response.json();
+        tabelaCorpo.innerHTML = "";
+
+        if (vacinas.length === 0) {
+          tabelaCorpo.innerHTML =
+            '<tr><td colspan="4">Nenhuma vacina cadastrada.</td></tr>';
+          return;
+        }
+
+        vacinas.forEach((vacina) => {
+
+          tabelaCorpo.innerHTML += `
+                  <tr>
+                      <td>${vacina.idVacina}</td>
+                      <td>${vacina.nomeVacina}</td>
+                      <td>${vacina.tipo}</td>
+                      <td>
+                          <button class="btn-acao btn-editar"
+                              onclick="prepararEdicao(
+                                  ${vacina.idVacina},
+                                  '${vacina.nomeVacina}',
+                                  '${vacina.tipo || ""}'
+                              )">
+                              Editar
+                          </button>
+                          <button class="btn-acao btn-excluir"
+                              onclick="excluirVacina(${vacina.idVacina})">
+                              Excluir
+                          </button>
+                      </td>
+                  </tr>
+              `;
+        });
+      } catch (error) {
+        console.error(error);
+        tabelaCorpo.innerHTML =
+          '<tr><td colspan="4">Erro ao carregar dados.</td></tr>';
+      }
+    }
+
+
+    formVacina.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const id = vacinaIdInput.value;
+      const nome = vacinaNomeInput.value;
+      const tipo = vacinaTipoInput.value;
+
+      if (!nome) {
+        alert("O nome da vacina é obrigatório.");
+        return;
+      }
+
+
+      const isEdicao = id !== "";
+      const method = isEdicao ? "PUT" : "POST";
+      const url = isEdicao ? `/api/vacinas/${id}` : "/api/vacinas";
+
+      const vacina = {
+        nomeVacina: nome,
+        tipo: tipo,
+      };
+
+
+      if (isEdicao) {
+        vacina.idVacina = parseInt(id);
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(vacina),
+        });
+
+        if (response.ok || response.status === 201) {
+          alert(`Vacina ${isEdicao ? "atualizada" : "salva"} com sucesso!`);
+          limparFormulario();
+          carregarVacinas();
+        } else {
+          alert("Erro ao salvar vacina.");
+        }
+      } catch (error) {
+        console.error("Erro de rede:", error);
+        alert("Erro de conexão ao salvar.");
+      }
+    });
+
+
+    function prepararEdicao(id, nome, tipo) {
+      formTitulo.textContent = `Editando Vacina (ID: ${id})`;
+      vacinaIdInput.value = id;
+      vacinaNomeInput.value = nome;
+      vacinaTipoInput.value = tipo;
+      btnCancelarEdicao.style.display = "block";
+      window.scrollTo(0, 0);
+    }
+
+
+    async function excluirVacina(id) {
+      if (!confirm(`Tem certeza que deseja excluir a vacina ID ${id}?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/vacinas/${id}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok || response.status === 204) {
+          alert("Vacina excluída com sucesso!");
+          carregarVacinas();
+        } else {
+          alert(
+            "Erro ao excluir vacina. (Ela pode estar sendo usada em um certificado)."
+          );
+        }
+      } catch (error) {
+        console.error("Erro de rede:", error);
+        alert("Erro de conexão ao excluir.");
+      }
+    }
+
+    function limparFormulario() {
+      formTitulo.textContent = "Gerenciar Vacinas";
+      formVacina.reset();
+      vacinaIdInput.value = "";
+      btnCancelarEdicao.style.display = "none";
+    }
+    btnCancelarEdicao.addEventListener("click", limparFormulario);
+    document.addEventListener("DOMContentLoaded", carregarVacinas);
+</script>
+</body>
+</html>

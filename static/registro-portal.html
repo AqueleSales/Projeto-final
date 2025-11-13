@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meu Assistente Pet | Escolha seu Perfil</title>
+    <!-- Linkando o CSS do login, vai ficar parecido -->
+    <link rel="stylesheet" href="css/login.css" />
+    <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        body {
+          background: #eef2f7;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+        }
+
+        .card {
+          background: #fff;
+          width: 100%;
+          max-width: 430px;
+          padding: 2.5rem;
+          border-radius: 12px;
+          box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.12);
+          text-align: center;
+        }
+
+        .logo-area h1 {
+          font-size: 1.9rem;
+          margin-bottom: 0.3rem;
+          color: #1e4a7d;
+          font-weight: 600;
+        }
+
+        .logo-area h1 span {
+          color: #2fa54d;
+        }
+
+        .logo-area p {
+          font-size: 1rem;
+          color: #444;
+          margin-bottom: 1.8rem;
+        }
+
+        .portal-btn {
+          display: block;
+          width: 100%;
+          padding: 14px;
+          margin-top: 1rem;
+          border: none;
+          border-radius: 8px;
+          font-size: 1.05rem;
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: none;
+          text-align: center;
+          transition: 0.25s;
+        }
+
+        .btn-dono {
+          background-color: #ffb84c;
+          color: #fff;
+        }
+        .btn-dono:hover {
+          background-color: #e4951f;
+        }
+
+        .btn-vet {
+          background-color: #3498db;
+          color: #fff;
+        }
+        .btn-vet:hover {
+          background-color: #2279b4;
+        }
+
+        .btn-treinador {
+          background-color: #2ecc71;
+          color: #fff;
+        }
+        .btn-treinador:hover {
+          background-color: #26a75c;
+        }
+
+        .footer-text {
+          margin-top: 2rem;
+          font-size: 0.95rem;
+          color: #333;
+        }
+
+        .footer-text a {
+          color: #1e4a7d;
+          font-weight: 600;
+          text-decoration: none;
+        }
+
+        .footer-text a:hover {
+          text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+          .card {
+            padding: 2rem;
+            max-width: 95%;
+          }
+
+          .logo-area h1 {
+            font-size: 1.7rem;
+          }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo-area">
+        <h1>Meu <span>Assistente Pet</span></h1>
+        <p>Como você quer se registrar?</p>
+    </div>
+
+    <!-- Links estilizados como botões -->
+    <a href="registro.html" class="portal-btn btn-dono"> Sou Dono de Pet </a>
+
+    <a href="registro-vet.html" class="portal-btn btn-vet">
+        Sou Veterinário(a)
+    </a>
+
+    <!-- --- BOTÃO NOVO ADICIONADO --- -->
+    <a href="registro-treinador.html" class="portal-btn btn-treinador">
+        Sou Treinador(a) Profissional
+    </a>
+
+    <div class="footer-text" style="margin-top: 2rem">
+        <p>Já tem uma conta? <a href="login.html">Faça login</a></p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,546 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | Assistente Pet</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        body {
+          background: #eef3f7;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+
+        header {
+          width: 100%;
+          background: #ffffff;
+          padding: 1rem 2rem;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border-bottom: 1px solid #d5dee8;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        header h1 {
+          font-size: 1.6rem;
+          color: #1e4a7d;
+          font-weight: 600;
+        }
+
+        .new-pet-btn {
+          padding: 10px 14px;
+          background: #ffb84c;
+          color: #fff;
+          border-radius: 8px;
+          cursor: pointer;
+          border: none;
+          font-weight: 600;
+          transition: 0.2s;
+          font-size: 0.95rem;
+        }
+
+        .new-pet-btn:hover {
+          opacity: 0.9;
+        }
+
+        #btn-logout {
+          background: #6c757d;
+        }
+
+        #btn-perfil {
+          background: #007bff;
+        }
+
+        .pets-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 1.4rem;
+          padding: 2rem;
+        }
+
+        .pet-card {
+          background: #fff;
+          padding: 1.4rem;
+          border-radius: 12px;
+          border: 1px solid #d1dfeb;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          transition: 0.25s;
+        }
+
+        .pet-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .pet-card h3 {
+          font-size: 1.2rem;
+          color: #1e4a7d;
+          margin-bottom: 6px;
+        }
+
+        .pet-card p {
+          font-size: 0.95rem;
+          color: #555;
+        }
+
+        .card-actions {
+          margin-top: 14px;
+          display: flex;
+          gap: 8px;
+        }
+
+        .details-btn,
+        .vacinas-btn {
+          flex: 1;
+          padding: 10px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 0.9rem;
+          transition: 0.2s;
+        }
+
+        .details-btn {
+          background-color: #3498db;
+          color: white;
+        }
+
+        .details-btn:hover {
+          background: #2279b4;
+        }
+
+        .vacinas-btn {
+          background-color: #2ecc71;
+          color: white;
+        }
+
+        .vacinas-btn:hover {
+          background: #26a75c;
+        }
+
+        .pets-list p {
+          font-size: 1.05rem;
+          color: #444;
+          text-align: center;
+          grid-column: 1/-1;
+        }
+
+        .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          inset: 0;
+          background-color: rgba(0, 0, 0, 0.6);
+          align-items: center;
+          justify-content: center;
+        }
+
+        .modal-content {
+          background-color: #fff;
+          padding: 25px;
+          border-radius: 12px;
+          width: 90%;
+          max-width: 500px;
+          animation: fadeIn 0.22s ease-in-out;
+          border: 1px solid #ddd;
+        }
+
+        .modal-content h3 {
+          color: #e85c0d;
+          margin-bottom: 16px;
+        }
+
+        .modal-form {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .modal-form label {
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin-bottom: 4px;
+          display: block;
+        }
+
+        .modal-form input,
+        .modal-form select {
+          width: 100%;
+          padding: 10px;
+          border: 2px solid #ccc;
+          border-radius: 6px;
+          transition: 0.2s;
+        }
+
+        .modal-form input:focus,
+        .modal-form select:focus {
+          border-color: #1e4a7d;
+        }
+
+        .checkbox-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background-color: #f4f4f4;
+          padding: 10px;
+          border-radius: 6px;
+        }
+
+        #campos-animal-servico {
+          display: none;
+          flex-direction: column;
+          gap: 15px;
+          padding: 14px;
+          border: 2px dashed #e85c0d;
+          border-radius: 6px;
+          margin-top: 10px;
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+        }
+
+        .modal-actions button {
+          flex: 1;
+          padding: 10px;
+          border: none;
+          border-radius: 6px;
+          font-weight: bold;
+          cursor: pointer;
+        }
+
+        #btn-salvar-pet {
+          background: #ffb84c;
+          color: white;
+        }
+
+        #btn-salvar-pet:hover {
+          filter: brightness(0.9);
+        }
+
+        #btn-cancelar-pet {
+          background: #6c757d;
+          color: white;
+        }
+
+        #btn-cancelar-pet:hover {
+          filter: brightness(0.9);
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.96);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @media (max-width: 600px) {
+          header {
+            padding: 1rem;
+            flex-wrap: wrap;
+          }
+
+          .new-pet-btn {
+            flex: 1;
+            margin-top: 8px;
+          }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🐾 Meus Pets</h1>
+    <button
+            class="new-pet-btn"
+            id="btn-perfil"
+            style="background-color: #007bff; margin-left: auto; margin-right: 10px"
+    >
+        Meu Perfil
+    </button>
+    <button class="new-pet-btn" id="btn-novo-pet">Cadastrar Novo Pet</button>
+    <button
+            class="new-pet-btn"
+            id="btn-logout"
+            style="background-color: #aaa"
+    >
+        Sair
+    </button>
+</header>
+
+<main class="pets-list" id="pets-list-container"></main>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3>Cadastrar Novo Pet</h3>
+        <form id="form-novo-pet" class="modal-form">
+            <div>
+                <label for="novo-pet-nome">Nome do Pet *</label>
+                <input type="text" id="novo-pet-nome" required />
+            </div>
+            <div>
+                <label for="novo-pet-especie">Espécie *</label>
+                <input
+                        type="text"
+                        id="novo-pet-especie"
+                        placeholder="Ex: Cachorro, Gato"
+                        required
+                />
+            </div>
+            <div>
+                <label for="novo-pet-raca">Raça</label>
+                <input
+                        type="text"
+                        id="novo-pet-raca"
+                        placeholder="Ex: SRD, Poodle"
+                />
+            </div>
+            <div>
+                <label for="novo-pet-data-nasc"
+                >Data de Nascimento (Opcional)</label
+                >
+                <input type="date" id="novo-pet-data-nasc" />
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="check-animal-servico" />
+                <label for="check-animal-servico"
+                >Este é um Animal de Serviço</label
+                >
+            </div>
+
+            <div id="campos-animal-servico">
+                <p style="margin: 0; font-size: 0.9rem; color: #555">
+                    Preencha os dados da certificação do animal:
+                </p>
+                <div>
+                    <label for="novo-pet-registro">Número de Registro Oficial</label>
+                    <input
+                            type="text"
+                            id="novo-pet-registro"
+                            placeholder="Ex: AS-BR-001"
+                    />
+                </div>
+                <div>
+                    <label for="novo-pet-status">Status do Animal</label>
+                    <select id="novo-pet-status">
+                        <option value="Em Treinamento">Em Treinamento</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Aposentado">Aposentado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btn-cancelar-pet">Cancelar</button>
+                <button type="submit" id="btn-salvar-pet">Salvar Pet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // --- 1. ELEMENTOS PRINCIPAIS ---
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+    const petsListContainer = document.getElementById("pets-list-container");
+    const btnNovoPet = document.getElementById("btn-novo-pet");
+    const btnLogout = document.getElementById("btn-logout");
+    const btnPerfil = document.getElementById("btn-perfil");
+
+    // --- 2. ELEMENTOS DO MODAL ---
+    const modal = document.getElementById("modal");
+    const formNovoPet = document.getElementById("form-novo-pet");
+    const btnCancelarPet = document.getElementById("btn-cancelar-pet");
+    const checkAnimalServico = document.getElementById(
+      "check-animal-servico"
+    );
+    const camposAnimalServico = document.getElementById(
+      "campos-animal-servico"
+    );
+
+    // --- 3. INICIALIZAÇÃO E SEGURANÇA ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Segurança
+      if (!usuarioLogado || usuarioLogado.role !== "DONO") {
+        alert("Acesso negado. Faça login como Dono.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Se logado, carrega os pets
+      carregarPets();
+    });
+
+    // --- 4. FUNÇÃO PARA CARREGAR OS PETS (Atualizada) ---
+    async function carregarPets() {
+      petsListContainer.innerHTML = "<p>Carregando pets...</p>";
+      try {
+        // Esta API agora retorna o 'status' graças à mudança no PetDAO
+        const response = await fetch(
+          `/api/pets/dono/${usuarioLogado.idPessoa}`
+        );
+        if (!response.ok) {
+          throw new Error("Erro ao buscar pets.");
+        }
+        const pets = await response.json();
+
+        petsListContainer.innerHTML = ""; // Limpa o "Carregando"
+        if (pets.length === 0) {
+          petsListContainer.innerHTML =
+            "<p>Você ainda não cadastrou nenhum pet.</p>";
+          return;
+        }
+
+        // Cria um card para cada pet
+        pets.forEach((pet) => {
+          petsListContainer.appendChild(criarPetCard(pet));
+        });
+      } catch (error) {
+        console.error(error);
+        petsListContainer.innerHTML = "<p>Erro ao carregar seus pets.</p>";
+      }
+    }
+
+    // --- 5. FUNÇÃO AUXILIAR PARA CRIAR O CARD DO PET (Atualizada) ---
+    function criarPetCard(pet) {
+      const card = document.createElement("div");
+      card.className = "pet-card"; // Assumindo que a classe existe no CSS
+
+      // Adiciona o badge de status se pet.status existir
+      const statusBadge = pet.status
+        ? `<span class="status-badge">Animal de Serviço</span>`
+        : "";
+
+      card.innerHTML = `
+          <h3>${pet.nome} ${statusBadge}</h3>
+          <p>${pet.especie} | ${pet.raca || "SRD"}</p>
+          <div class="card-actions">
+              <button class="details-btn" onclick="verDetalhes(${
+                pet.idPet
+              })">Ver Detalhes</button>
+              <button class="vacinas-btn" onclick="verVacinas(${
+                pet.idPet
+              })">Vacinas</button>
+          </div>
+      `;
+      return card;
+    }
+
+    // --- 6. FUNÇÕES DE NAVEGAÇÃO DOS CARDS (Atualizadas) ---
+    function verDetalhes(idPet) {
+      // Redireciona para a página de detalhes
+      window.location.href = `detalhes-pet.html?id=${idPet}`;
+    }
+
+    function verVacinas(idPet) {
+      // Redireciona para a página de histórico de vacinas
+      window.location.href = `historico-vacinas.html?id=${idPet}`;
+    }
+
+    // --- 7. LÓGICA DO MODAL (Cadastro) ---
+    btnNovoPet.addEventListener("click", () => {
+      formNovoPet.reset(); // Limpa o formulário
+      camposAnimalServico.style.display = "none"; // Esconde os campos extra
+      modal.style.display = "flex"; // Abre o modal
+    });
+
+    btnCancelarPet.addEventListener("click", () => {
+      modal.style.display = "none"; // Fecha o modal
+    });
+
+    // Mostrar/Esconder campos de Animal de Serviço
+    checkAnimalServico.addEventListener("change", () => {
+      if (checkAnimalServico.checked) {
+        camposAnimalServico.style.display = "flex"; // Mostra os campos
+      } else {
+        camposAnimalServico.style.display = "none"; // Esconde
+      }
+    });
+
+    // AÇÃO DE SALVAR O NOVO PET (POST)
+    formNovoPet.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // 1. Pega os dados básicos (Pet)
+      const petData = {
+        nome: document.getElementById("novo-pet-nome").value,
+        especie: document.getElementById("novo-pet-especie").value,
+        raca: document.getElementById("novo-pet-raca").value || null,
+        dataNascimento:
+          document.getElementById("novo-pet-data-nasc").value || null,
+        idDonoTransporte: usuarioLogado.idPessoa,
+      };
+
+      let url = ""; // A URL da API
+      let bodyPayload = {}; // O JSON que vamos enviar
+
+      // 2. Verifica se é um Animal de Serviço
+      if (checkAnimalServico.checked) {
+        // É um Animal de Serviço
+        url = "/api/animais-de-servico"; // Usa a nova rota
+
+        bodyPayload = {
+          ...petData,
+          numeroRegistroOficial:
+            document.getElementById("novo-pet-registro").value || null,
+          status: document.getElementById("novo-pet-status").value,
+        };
+      } else {
+
+        url = "/api/pets";
+        bodyPayload = petData;
+      }
+
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyPayload),
+        });
+
+        if (response.status === 201) {
+
+          alert("Pet cadastrado com sucesso!");
+          modal.style.display = "none";
+          carregarPets();
+        } else {
+          const error = await response.json();
+          console.error("Erro da API:", error);
+          alert("Erro ao cadastrar o pet. Verifique os dados.");
+        }
+      } catch (error) {
+        console.error("Erro de rede:", error);
+        alert("Erro de conexão ao salvar.");
+      }
+    });
+
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogado");
+      alert("Você saiu.");
+      window.location.href = "login.html";
+    });
+
+    btnPerfil.addEventListener("click", () => {
+      window.location.href = "perfil.html";
+    });
+</script>
+</body>
+</html>

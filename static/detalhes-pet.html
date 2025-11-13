@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PetShop | Detalhes do Pet</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <style>
+        body {
+          padding: 2rem;
+           font-family: "Segoe UI", Arial, sans-serif;
+        }
+        .card-detalhes {
+          background: #fff;
+          padding: 2.5rem;
+          max-width: 600px;
+          margin: 0 auto;
+          border-radius: 18px;
+          box-shadow: 0px 0px 15px #0000002f;
+        }
+        .card-detalhes h1 {
+          color: #e85c0d;
+        }
+        .input-group {
+          text-align: left;
+          margin-top: 1.5rem;
+        }
+        .input-group label {
+          font-weight: 600;
+          color: #333;
+          display: block;
+          margin-bottom: 5px;
+        }
+        .input-group input,
+        .input-group select {
+          width: 100%;
+          padding: 12px;
+          border-radius: 8px;
+          border: 2px solid #ffb84c;
+          outline: none;
+          box-sizing: border-box;
+        }
+        .btn-salvar {
+          background: #28a745;
+        }
+        .btn-excluir {
+          background: #dc3545;
+          margin-top: 10px;
+        }
+        .btn-voltar {
+          background: #6c757d;
+          margin-top: 10px;
+        }
+
+        .checkbox-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background-color: #f4f4f4;
+          padding: 10px;
+          border-radius: 6px;
+          margin-top: 1.5rem;
+        }
+        .checkbox-group label {
+          margin-bottom: 0;
+        }
+        .checkbox-group input {
+          width: auto;
+          border: none;
+        }
+
+        #campos-animal-servico {
+          display: none;
+          flex-direction: column;
+          gap: 15px;
+          padding: 15px;
+          border: 2px dashed #e85c0d;
+          border-radius: 6px;
+          margin-top: 10px;
+        }
+
+        #container-credencial {
+            display: none;
+            margin-top: 2rem;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        #container-credencial h3 {
+            color: #2ecc71;
+            margin-top: 0;
+        }
+        #container-credencial p, #container-credencial li {
+            font-size: 0.95rem;
+        }
+        #cred-lista-habilidades {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="card-detalhes">
+    <h1 id="pet-nome-titulo">Carregando...</h1>
+    <p>Use os campos abaixo para editar as informações do seu pet.</p>
+
+    <form id="form-editar-pet">
+        <div class="input-group">
+            <label for="pet-nome">Nome do Pet *</label>
+            <input type="text" id="pet-nome" required />
+        </div>
+        <div class="input-group">
+            <label for="pet-especie">Espécie *</label>
+            <input type="text" id="pet-especie" required />
+        </div>
+        <div class="input-group">
+            <label for="pet-raca">Raça</label>
+            <input type="text" id="pet-raca" />
+        </div>
+        <div class="input-group">
+            <label for="pet-data-nasc">Data de Nascimento</label>
+            <input type="date" id="pet-data-nasc" />
+        </div>
+
+        <button type="submit" class="details-btn btn-salvar">
+            Salvar Alterações do Pet
+        </button>
+    </form>
+
+    <hr style="margin-top: 2rem; border: 1px solid #eee" />
+
+    <form id="form-promover-pet">
+        <div class="checkbox-group">
+            <input type="checkbox" id="check-animal-servico" />
+            <label for="check-animal-servico">Este é um Animal de Serviço</label>
+        </div>
+
+        <div id="campos-animal-servico">
+            <div class="input-group">
+                <label for="novo-pet-registro">Número de Registro Oficial</label>
+                <input
+                        type="text"
+                        id="novo-pet-registro"
+                        placeholder="Ex: AS-BR-001"
+                />
+            </div>
+            <div class="input-group">
+                <label for="novo-pet-status">Status do Animal</label>
+                <select id="novo-pet-status">
+                    <option value="Em Treinamento">Em Treinamento</option>
+                    <option value="Ativo">Ativo</option>
+                    <option value="Aposentado">Aposentado</option>
+                </select>
+            </div>
+        </div>
+
+        <button
+                type="submit"
+                class="details-btn btn-salvar"
+                style="margin-top: 10px"
+        >
+            Salvar Status de Serviço
+        </button>
+    </form>
+
+    <div id="container-credencial">
+        <h3>Credencial de Serviço</h3>
+        <p id="credencial-loading-msg">Carregando dados da credencial...</p>
+        <div id="credencial-detalhes" style="display: none;">
+            <p><strong>Data de Emissão:</strong> <span id="cred-data-emissao"></span></p>
+            <p><strong>Data de Validade:</strong> <span id="cred-data-validade"></span></p>
+            <p><strong>ID do Treinador:</strong> <span id="cred-id-treinador"></span></p>
+            <p><strong>Habilidades Atestadas:</strong></p>
+            <ul id="cred-lista-habilidades"></ul>
+        </div>
+    </div>
+
+    <hr style="margin-top: 2rem; border: 1px solid #eee" />
+
+    <button class="details-btn btn-excluir" id="btn-excluir-pet">
+        EXCLUIR PET
+    </button>
+    <button class="details-btn btn-voltar" id="btn-voltar">
+        Voltar para Dashboard
+    </button>
+</div>
+
+<script>
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+    if (!usuarioLogado) {
+      alert("Você precisa estar logado.");
+      window.location.href = "login.html";
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const petId = urlParams.get("id");
+
+    const formEditarPet = document.getElementById("form-editar-pet");
+    const petNomeTitulo = document.getElementById("pet-nome-titulo");
+    const petNomeInput = document.getElementById("pet-nome");
+    const petEspecieInput = document.getElementById("pet-especie");
+    const petRacaInput = document.getElementById("pet-raca");
+    const petDataNascInput = document.getElementById("pet-data-nasc");
+
+    const formPromoverPet = document.getElementById("form-promover-pet");
+    const checkAnimalServico = document.getElementById(
+      "check-animal-servico"
+    );
+    const camposAnimalServico = document.getElementById(
+      "campos-animal-servico"
+    );
+    const petRegistroInput = document.getElementById("novo-pet-registro");
+    const petStatusSelect = document.getElementById("novo-pet-status");
+
+    const btnExcluir = document.getElementById("btn-excluir-pet");
+    const btnVoltar = document.getElementById("btn-voltar");
+
+    const containerCredencial = document.getElementById("container-credencial");
+    const credencialLoadingMsg = document.getElementById("credencial-loading-msg");
+    const credencialDetalhes = document.getElementById("credencial-detalhes");
+    const credDataEmissao = document.getElementById("cred-data-emissao");
+    const credDataValidade = document.getElementById("cred-data-validade");
+    const credIdTreinador = document.getElementById("cred-id-treinador");
+    const credListaHabilidades = document.getElementById("cred-lista-habilidades");
+
+    if (!petId) {
+      alert("ID do pet não encontrado.");
+      window.location.href = "dashboard.html";
+    }
+
+    function formatarData(dataISO) {
+      if (!dataISO) return "N/A";
+      const [ano, mes, dia] = dataISO.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    async function carregarCredencial(idDoPet) {
+      containerCredencial.style.display = "block";
+      try {
+        const response = await fetch(`/api/credenciais/animal/${idDoPet}`);
+
+        if (response.ok) {
+          const credencial = await response.json();
+
+          credDataEmissao.textContent = formatarData(credencial.dataEmissao);
+          credDataValidade.textContent = formatarData(credencial.dataValidade);
+          credIdTreinador.textContent = credencial.idTreinador;
+
+          credListaHabilidades.innerHTML = "";
+          if (credencial.habilidades && credencial.habilidades.length > 0) {
+            credencial.habilidades.forEach(hab => {
+              credListaHabilidades.innerHTML += `<li>${hab.descricaoHabilidade}</li>`;
+            });
+          } else {
+            credListaHabilidades.innerHTML = "<li>Nenhuma habilidade listada.</li>";
+          }
+
+          credencialLoadingMsg.style.display = "none";
+          credencialDetalhes.style.display = "block";
+
+        } else if (response.status === 404) {
+          credencialLoadingMsg.textContent = "Este animal de serviço ainda não possui uma credencial emitida por um treinador.";
+        } else {
+          credencialLoadingMsg.textContent = "Erro ao buscar dados da credencial.";
+        }
+
+      } catch (error) {
+        console.error("Erro de rede ao buscar credencial:", error);
+        credencialLoadingMsg.textContent = "Erro de conexão ao buscar credencial.";
+      }
+    }
+
+    async function carregarDetalhesPet() {
+      try {
+        const response = await fetch(`/api/pets/${petId}`);
+        if (response.ok) {
+          const pet = await response.json();
+
+          petNomeTitulo.textContent = `Detalhes de: ${pet.nome}`;
+          petNomeInput.value = pet.nome;
+          petEspecieInput.value = pet.especie;
+          petRacaInput.value = pet.raca || "";
+          petDataNascInput.value = pet.dataNascimento || "";
+
+          if (pet.status) {
+            checkAnimalServico.checked = true;
+            camposAnimalServico.style.display = "flex";
+            petRegistroInput.value = pet.numeroRegistroOficial || "";
+            petStatusSelect.value = pet.status;
+
+            carregarCredencial(pet.idPet);
+
+          } else {
+            checkAnimalServico.checked = false;
+            camposAnimalServico.style.display = "none";
+          }
+        } else {
+          alert("Erro ao carregar os dados deste pet.");
+          window.location.href = "dashboard.html";
+        }
+      } catch (error) {
+        console.error("Erro de rede:", error);
+        alert("Erro de conexão com o servidor.");
+      }
+    }
+
+    formEditarPet.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const petAtualizado = {
+        idPet: parseInt(petId),
+        nome: petNomeInput.value,
+        especie: petEspecieInput.value,
+        raca: petRacaInput.value || null,
+        dataNascimento: petDataNascInput.value || null,
+        idDonoTransporte: usuarioLogado.idPessoa,
+      };
+
+      try {
+        const response = await fetch(`/api/pets/${petId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(petAtualizado),
+        });
+
+        if (response.ok) {
+          alert("Dados básicos do pet atualizados com sucesso!");
+          petNomeTitulo.textContent = `Detalhes de: ${petAtualizado.nome}`;
+        } else {
+          alert("Erro ao atualizar os dados básicos.");
+        }
+      } catch (error) {
+        console.error("Erro de rede (PUT):", error);
+        alert("Erro de conexão ao salvar.");
+      }
+    });
+
+    checkAnimalServico.addEventListener("change", () => {
+      if (checkAnimalServico.checked) {
+        camposAnimalServico.style.display = "flex";
+      } else {
+        camposAnimalServico.style.display = "none";
+      }
+    });
+
+    formPromoverPet.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (checkAnimalServico.checked) {
+        console.log("Promovendo/Atualizando status de serviço...");
+        const dadosPromocao = {
+          idPet: parseInt(petId),
+          numeroRegistroOficial: petRegistroInput.value || null,
+          status: petStatusSelect.value,
+        };
+        try {
+          const response = await fetch(`/api/pets/promover`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosPromocao),
+          });
+          if (response.ok) {
+            alert("Status de Animal de Serviço salvo com sucesso!");
+            carregarCredencial(petId);
+          } else {
+            alert("Erro ao salvar o status de serviço.");
+          }
+        } catch (error) {
+          console.error("Erro de rede (POST /promover):", error);
+          alert("Erro de conexão ao salvar status.");
+        }
+      } else {
+        console.log("Rebaixando pet para pet comum...");
+        try {
+          const response = await fetch(`/api/pets/demover/${petId}`, {
+            method: "DELETE",
+          });
+          if (response.ok || response.status === 204) {
+            alert("Pet rebaixado para pet comum com sucesso!");
+            petRegistroInput.value = "";
+            petStatusSelect.value = "Em Treinamento";
+            containerCredencial.style.display = "none";
+          } else {
+            alert("Erro ao rebaixar o pet.");
+          }
+        } catch (error) {
+          console.error("Erro de rede (DELETE /demover):", error);
+          alert("Erro de conexão ao salvar status.");
+        }
+      }
+    });
+
+    btnExcluir.addEventListener("click", async () => {
+      const confirmar = confirm(
+        "Tem certeza que deseja excluir este pet? Esta ação não pode ser desfeita."
+      );
+      if (confirmar) {
+        try {
+          const response = await fetch(`/api/pets/${petId}`, {
+            method: "DELETE",
+          });
+          if (response.status === 204) {
+            alert("Pet excluído com sucesso.");
+            window.location.href = "dashboard.html";
+          } else {
+            alert("Erro ao excluir o pet.");
+          }
+        } catch (error) {
+          console.error("Erro de rede (DELETE):", error);
+          alert("Erro de conexão ao excluir.");
+        }
+      }
+    });
+
+    btnVoltar.addEventListener("click", () => {
+      window.location.href = "dashboard.html";
+    });
+
+    carregarDetalhesPet();
+</script>
+</body>
+</html>
